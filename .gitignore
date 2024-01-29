@@ -52,6 +52,14 @@ Plugins/*/Binaries/*
 # Builds
 Build/*
 
+# Misc
+.idea/
+.vsconfig/
+.vsconfig/
+.vscode/
+
+.vsconfig
+
 # Whitelist PakBlacklist-<BuildConfiguration>.txt files
 !Build/*/
 Build/*/**
