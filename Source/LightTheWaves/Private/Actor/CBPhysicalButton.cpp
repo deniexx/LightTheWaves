@@ -1,0 +1,79 @@
+// Made By Cubic Burrito
+
+
+#include "Actor/CBPhysicalButton.h"
+
+#include "Components/BoxComponent.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "PhysicsEngine/PhysicsThrusterComponent.h"
+
+static TAutoConsoleVariable<int32> CVarDrawDebugPhysicalButtons(
+	TEXT("ShowDebugPhysicalButtons"),
+	0,
+	TEXT("Draws debug info for physical buttons")
+	TEXT(" 0: Do not show debug info/n")
+	TEXT(" 1: Show Debug info/n"),
+	ECVF_Cheat
+);
+
+// Sets default values
+ACBPhysicalButton::ACBPhysicalButton()
+{
+ 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+	SceneRootComponent = CreateDefaultSubobject<USceneComponent>(FName("Root"));
+	ButtonBody = CreateDefaultSubobject<UStaticMeshComponent>(FName("ButtonBody"));
+	ActivationBox = CreateDefaultSubobject<UBoxComponent>(FName("ActivationBox"));
+	PhysicsConstraintComponent = CreateDefaultSubobject<UPhysicsConstraintComponent>(FName("PhysicsConstraintComponent"));
+	ButtonTop = CreateDefaultSubobject<UStaticMeshComponent>(FName("ButtonTop"));
+	PhysicsThrusterComponent = CreateDefaultSubobject<UPhysicsThrusterComponent>(FName("PhysicsThrusterComponent"));
+
+	SetRootComponent(SceneRootComponent);
+	ButtonBody->SetupAttachment(GetRootComponent());
+	ActivationBox->SetupAttachment(GetRootComponent());
+	PhysicsConstraintComponent->SetupAttachment(GetRootComponent());
+	ButtonTop->SetupAttachment(GetRootComponent());
+	PhysicsThrusterComponent->SetupAttachment(ButtonTop);
+
+	PhysicsThrusterComponent->ThrustStrength = 5000.f;
+	PhysicsThrusterComponent->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+	PhysicsThrusterComponent->SetAutoActivate(true);
+	
+	PhysicsConstraintComponent->SetConstrainedComponents(ButtonBody, FName(""), ButtonTop, FName(""));
+	PhysicsConstraintComponent->SetDisableCollision(true);
+	PhysicsConstraintComponent->SetLinearXLimit(LCM_Locked, 0.f);
+	PhysicsConstraintComponent->SetLinearYLimit(LCM_Locked, 0.f);
+	PhysicsConstraintComponent->SetLinearZLimit(LCM_Limited, 5.f);
+
+	PhysicsConstraintComponent->SetAngularSwing1Limit(ACM_Locked, 0.f);
+	PhysicsConstraintComponent->SetAngularSwing2Limit(ACM_Locked, 0.f);
+	PhysicsConstraintComponent->SetAngularTwistLimit(ACM_Locked, 0.f);
+}
+
+// Called when the game starts or when spawned
+void ACBPhysicalButton::BeginPlay()
+{
+	Super::BeginPlay();
+
+	ButtonTop->SetSimulatePhysics(true);
+	ActivationBox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnOverlap);
+}
+
+void ACBPhysicalButton::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+                                  UPrimitiveComponent* OtherComp, int OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherComp == ButtonTop)
+	{
+		OnButtonActivated();
+	}
+}
+
+void ACBPhysicalButton::OnButtonActivated_Implementation()
+{
+	const bool bShowDebug = CVarDrawDebugPhysicalButtons.GetValueOnAnyThread() > 0;
+	if (bShowDebug)
+	{
+		DrawDebugSphere(GetWorld(), GetActorLocation(), 12, 12, FColor::Blue, true, 3.f);
+	}
+}

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Made By Cubic Burrito
 
 #pragma once
 
@@ -7,7 +7,6 @@
 #include "CBPawn.generated.h"
 
 class UInputAction;
-class ACBHandCannon;
 class UInputMappingContext;
 class UCameraComponent;
 class UPhysicsConstraintComponent;
