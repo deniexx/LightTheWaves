@@ -60,7 +60,7 @@ ACBPawn::ACBPawn()
 	PhysicsConstraintRight->SetupAttachment(PivotRight);
 #pragma endregion
 
-#pragma region DefaultValues
+#pragma region Default Values
 	MotionControllerLeft->SetTrackingMotionSource(FName("Left"));
 	MotionControllerLeft->SetAssociatedPlayerIndex(0);
 	PivotLeft->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -143,15 +143,15 @@ ACBPawn::ACBPawn()
 void ACBPawn::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	/** @NOTE: I'm not sure if it's needed to call these here, but there is no real issue in doing that, so might as well leave them */
 	PhysicsConstraintRight->SetConstraintReferenceFrame(EConstraintFrame::Frame1, PivotRight->GetComponentTransform());
 	PhysicsConstraintRight->SetConstraintReferenceFrame(EConstraintFrame::Frame2, HandRight->GetComponentTransform());
 	PhysicsConstraintLeft->SetConstrainedComponents(PivotLeft, FName(""), HandCannon, FName(""));
 	PhysicsConstraintRight->SetConstrainedComponents(PivotRight, FName(""), HandRight, FName(""));
 	HandRight->SetSimulatePhysics(true);
 	HandCannon->SetSimulatePhysics(true);
-
-
+	
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Stage);
@@ -179,7 +179,7 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	/** @NOTE: We might want to setup some keys for debugging, like firing the cannon? */
+	/** @NOTE: This is probably only for debug or can be added to have controls for recentering, etc... */
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(ShootInputAction, ETriggerEvent::Started, this, &ThisClass::Shoot);
@@ -188,5 +188,6 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void ACBPawn::Shoot()
 {
+	/** This can be improved, but it's okay for debugging(adding things like aim assist) */
 	GetWorld()->SpawnActor<AActor>(ProjectileClass, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator());
 }

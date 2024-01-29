@@ -26,6 +26,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	/** The origin of the player in VR */
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<USceneComponent> VROrigin;
 
@@ -45,9 +46,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<UMotionControllerComponent> MotionControllerLeftAim;
 	
+	/** @NOTE: This might have to become it's own class for encapsulation */
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<UStaticMeshComponent> HandCannon;
 
+	/** This determines the spawn location of the projectile */
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<USceneComponent> ShootLocation;
 	/** End Left Hand */
@@ -78,15 +81,19 @@ protected:
 	TObjectPtr<UMotionControllerComponent> MotionControllerRightAim;
 	/** End Right Hand */
 
+	/** The default mapping context, can be used for debug to debug input and stuff */
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
 
+	/** Shoot input action for debug purposes */
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> ShootInputAction;
 
+	/** Projectile class to spawn from the cannon */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	TSubclassOf<AActor> ProjectileClass;
 
+	/** Currently called from the input action, might have to rework later in order for it work with the cannon physical interaction */
 	UFUNCTION()
 	void Shoot();
 	
