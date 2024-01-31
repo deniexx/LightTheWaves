@@ -82,6 +82,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
 	float LifeLoss = 10.f;
 
+	/** The maximum distance allowed between the boat and path, without having it correct itself(move back towards the path)*/
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	float MaxDistanceToPathAllowed = 50.f;
+
 private:
 
 	EBoatPathingState CurrentPathingState = EBoatPathingState::None;

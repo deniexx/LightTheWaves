@@ -5,6 +5,8 @@
 
 #include "Components/SphereComponent.h"
 #include "Components/SplineComponent.h"
+#include "GameFramework/GameModeBase.h"
+#include "Interface/CBPathProvider.h"
 #include "LightTheWaves/LightTheWaves.h"
 
 // Sets default values
@@ -25,6 +27,7 @@ void ACBBoat::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// @TODO: Handle Rotation of the boat towards movement
 	if (IsFollowingLight())
 	{
 		FollowLight(DeltaTime);
@@ -35,7 +38,7 @@ void ACBBoat::Tick(float DeltaTime)
 		FollowPath(DeltaTime);
 		return;
 	}
-	if (IsReturningToPath()) // @NOTE: This might be able to be integrated in follow path?
+	if (IsReturningToPath()) // @NOTE: This could be able to be integrated in follow path? Might not be worth it
 	{
 		ReturnToPath(DeltaTime);
 	}
@@ -50,7 +53,6 @@ void ACBBoat::FollowLight(float DeltaTime)
 		return;
 	}
 
-	// @NOTE: This might have to be improved, by adding collision detection
 	const FVector Direction = (FollowTarget->GetComponentLocation() - GetActorLocation()).GetSafeNormal();
 	AddActorWorldOffset(Direction * MovementSpeed);
 }
@@ -59,8 +61,8 @@ void ACBBoat::FollowPath(float DeltaTime)
 {
 	if (!CurrentPath)
 	{
-		// @TODO: Find a new path and set it
-		
+		UE_LOG(CBLog, Warning, TEXT("Boat [%s] has no current path, it is either waiting to receive one, or something is wrong."), GetNameSafe(this));
+		return;
 	}
 
 	const FVector LocationOnSpline = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
@@ -138,6 +140,19 @@ void ACBBoat::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 
 EBoatPathingState ACBBoat::EvaluateStatePostFollowLight()
 {
-	// @TODO: Determine if the light is close enough to the spline to where we can just keep going, instead of returning to it
-	return EBoatPathingState::ReturningToPath;
+	USplineComponent* SplineComponent = ICBPathProvider::Execute_GetClosestPath(GetWorld()->GetAuthGameMode(), this);
+	if (SplineComponent != CurrentPath)
+	{
+		CurrentPath = SplineComponent;
+	}
+
+	const FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
+	const float DistanceToClosestPathPoint = (ClosestSplinePoint - GetActorLocation()).Length();
+	if (DistanceToClosestPathPoint > MaxDistanceToPathAllowed)
+	{
+		// @TODO: Finish this(build up the path and follow it)
+		return EBoatPathingState::ReturningToPath;
+	}
+	
+	return EBoatPathingState::FollowingPath;
 }
