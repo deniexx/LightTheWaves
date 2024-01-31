@@ -5,3 +5,5 @@
 #include "CoreMinimal.h"
 
 #define ECC_3DWidget ECC_GameTraceChannel1
+
+DECLARE_LOG_CATEGORY_EXTERN(CBLog, Log, All)

@@ -4,3 +4,5 @@
 #include "Modules/ModuleManager.h"
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, LightTheWaves, "LightTheWaves" );
+
+DEFINE_LOG_CATEGORY(CBLog)
