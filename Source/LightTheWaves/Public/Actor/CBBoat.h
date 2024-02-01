@@ -73,28 +73,29 @@ protected:
 	uint32 PointIndex = 0;
 
 	/** How fast does the boat move */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float MovementSpeed = 50.f;
 
 	/** How much points are rewarded upon reaching the docks */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float PointsReward = 100.f;
 
 	/** How much currency is rewarded upon reaching the docks */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float CurrencyReward = 25.f;
 
 	/** How much life is lost when a boat is destroyed */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float LifeLoss = 10.f;
 
 	/** The maximum distance allowed between the boat and path, without having it correct itself(move back towards the path)*/
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float MaxDistanceToPathAllowed = 50.f;
 
-private:
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	TSubclassOf<AActor> DebrisLeftAfterDestruction;
 
-	bool bRan = false;
+private:
 
 	EBoatPathingState CurrentPathingState = EBoatPathingState::None;
 
@@ -110,6 +111,9 @@ private:
 	void FollowLight(float DeltaTime);
 	void FollowPath(float DeltaTime);
 	void ReturnToPath(float DeltaTime);
+
+	UFUNCTION(BlueprintCallable)
+	void LeaveDebris(const FVector& Location);
 
 	void DrawBoatDebugPathing(const FVector& Direction);
 	

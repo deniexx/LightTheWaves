@@ -137,6 +137,12 @@ void ACBBoat::ReturnToPath(float DeltaTime)
 	}
 }
 
+void ACBBoat::LeaveDebris(const FVector& Location)
+{
+	// @NOTE: Potentially randomize the rotation of the debris on an axis
+	GetWorld()->SpawnActor<AActor>(DebrisLeftAfterDestruction, Location, FRotator::ZeroRotator);
+}
+
 void ACBBoat::DrawBoatDebugPathing(const FVector& Direction)
 {
 	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + (Direction * 100.f), 1, FColor::Red, false, -1, 0, 3);
