@@ -8,6 +8,24 @@
 #include "Kismet/GameplayStatics.h"
 #include "LightTheWaves/LightTheWaves.h"
 
+void ACBGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	TArray<AActor*> SplineActors;
+	UGameplayStatics::GetAllActorsWithTag(this, FName("Path"), SplineActors);
+
+	for (const AActor* Actor : SplineActors)
+	{
+		if (USplineComponent* SplineComponent = Actor->GetComponentByClass<USplineComponent>())
+		{
+			SplinePaths.Add(SplineComponent);
+		}
+	}
+
+	ProcessBoatSpawning();
+}
+
 USplineComponent* ACBGameMode::GetRandomPath_Implementation()
 {
 	if (SplinePaths.Num() > 0)
@@ -48,25 +66,26 @@ USplineComponent* ACBGameMode::GetClosestPath_Implementation(AActor* ReferenceAc
 	return nullptr;
 }
 
-void ACBGameMode::BeginPlay()
+void ACBGameMode::ProcessBoatSpawning()
 {
-	Super::BeginPlay();
-
-	TArray<AActor*> SplineActors;
-	UGameplayStatics::GetAllActorsWithTag(this, FName("Path"), SplineActors);
-
-	for (const AActor* Actor : SplineActors)
+	if (BoatSpawningMode == EBoatSpawningMode::None)
 	{
-		if (USplineComponent* SplineComponent = Actor->GetComponentByClass<USplineComponent>())
-		{
-			SplinePaths.Add(SplineComponent);
-		}
+		return;
 	}
+	
+	float BoatSpawnPeriod = BoatSpawnCurve->GetFloatValue(1);
+	
+	if (BoatSpawningMode == EBoatSpawningMode::MaxPerWave)
+	{
+		// @NOTE: This will need to be improved
+		BoatSpawnPeriod = BoatSpawnCurve->GetFloatValue(1) / 5.f;
+	}
+	
+	GetWorldTimerManager().SetTimer(BoatSpawnTimerHandle, this, &ThisClass::SpawnBoat, BoatSpawnPeriod, false);
 }
 
-AActor* ACBGameMode::SpawnBoat()
+void ACBGameMode::SpawnBoat()
 {
-	// @TODO: Fix this
 	if (SpawnBoatClasses.Num() <= 0)
 	{
 		checkf(false, TEXT("Spawn Boat Classes in Game Mode is not filled in!"));
@@ -74,5 +93,7 @@ AActor* ACBGameMode::SpawnBoat()
 	
 	AActor* Boat = GetWorld()->SpawnActor<AActor>(SpawnBoatClasses[FMath::RandRange(0, SpawnBoatClasses.Num() - 1)], FActorSpawnParameters());
 	ICBPathingActor::Execute_SetPath(Boat, GetRandomPath());
-	return nullptr;
+
+	ProcessBoatSpawning();
 }
+
