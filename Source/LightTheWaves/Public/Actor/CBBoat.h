@@ -3,12 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Pawn.h"
 #include "Interface/CBLightInteractor.h"
 #include "Interface/CBPathingActor.h"
 #include "CBBoat.generated.h"
 
 class USphereComponent;
+
 UENUM(BlueprintType)
 enum class EBoatPathingState
 {
@@ -20,7 +21,7 @@ enum class EBoatPathingState
 };
 
 UCLASS()
-class LIGHTTHEWAVES_API ACBBoat : public AActor, public ICBLightInteractor, public ICBPathingActor
+class LIGHTTHEWAVES_API ACBBoat : public APawn, public ICBLightInteractor, public ICBPathingActor
 {
 	GENERATED_BODY()
 	
@@ -60,11 +61,16 @@ public:
 	
 protected:
 
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(VisibleAnywhere, Category = "Boat Stats")
 	TObjectPtr<UStaticMeshComponent> BoatMesh;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(VisibleAnywhere, Category = "Boat Stats")
 	TObjectPtr<USphereComponent> SphereTrigger;
+
+	UPROPERTY()
+	TArray<FVector> ReturnToPathPoints;
+
+	uint32 PointIndex = 0;
 
 	/** How fast does the boat move */
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
@@ -88,13 +94,15 @@ protected:
 
 private:
 
+	bool bRan = false;
+
 	EBoatPathingState CurrentPathingState = EBoatPathingState::None;
 
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent> FollowTarget;
 
 	UPROPERTY()
-	TObjectPtr<USplineComponent> TemporaryPath;
+	TArray<FVector> TemporaryPathPoints;
 	
 	UPROPERTY()
 	TObjectPtr<USplineComponent> CurrentPath;
@@ -103,6 +111,8 @@ private:
 	void FollowPath(float DeltaTime);
 	void ReturnToPath(float DeltaTime);
 
+	void DrawBoatDebugPathing(const FVector& Direction);
+	
 	EBoatPathingState EvaluateStatePostFollowLight();
 	
 	FORCEINLINE bool IsFollowingLight() const { return CurrentPathingState == EBoatPathingState::FollowingLight; }
