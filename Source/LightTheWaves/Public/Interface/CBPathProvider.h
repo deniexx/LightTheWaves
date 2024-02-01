@@ -24,7 +24,9 @@ class LIGHTTHEWAVES_API ICBPathProvider
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 
-	// @TODO: Change this to have a name of GetRandomPath and create one where it provides a path closest the boat
 	UFUNCTION(BlueprintNativeEvent, Category = "PathProvider")
-	USplineComponent* GetPath();
+	USplineComponent* GetRandomPath();
+
+	UFUNCTION(BlueprintNativeEvent, Category = "PathProvider")
+	USplineComponent* GetClosestPath(AActor* ReferenceActor);
 };

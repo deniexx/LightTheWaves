@@ -5,7 +5,20 @@
 
 #include "Components/SphereComponent.h"
 #include "Components/SplineComponent.h"
+#include "GameFramework/GameModeBase.h"
+#include "Interface/CBPathProvider.h"
 #include "LightTheWaves/LightTheWaves.h"
+#include "NavigationPath.h"
+#include "NavigationSystem.h"
+
+static TAutoConsoleVariable<int32> CVarDrawDebugBoatPathing(
+	TEXT("ShowDebugBoatPathing"),
+	0,
+	TEXT("Draws debug info about Boat Pathing")
+	TEXT(" 0: Do not show debug info/n")
+	TEXT(" 1: Show Debug info/n"),
+	ECVF_Cheat
+);
 
 // Sets default values
 ACBBoat::ACBBoat()
@@ -18,6 +31,8 @@ ACBBoat::ACBBoat()
 
 	SetRootComponent(SphereTrigger);
 	BoatMesh->SetupAttachment(GetRootComponent());
+
+	CurrentPathingState = EBoatPathingState::ReturningToPath;
 }
 
 // Called every frame
@@ -25,6 +40,7 @@ void ACBBoat::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// @TODO: Handle Rotation of the boat towards movement
 	if (IsFollowingLight())
 	{
 		FollowLight(DeltaTime);
@@ -35,7 +51,7 @@ void ACBBoat::Tick(float DeltaTime)
 		FollowPath(DeltaTime);
 		return;
 	}
-	if (IsReturningToPath()) // @NOTE: This might be able to be integrated in follow path?
+	if (IsReturningToPath()) // @NOTE: This could be able to be integrated in follow path? Might not be worth it
 	{
 		ReturnToPath(DeltaTime);
 	}
@@ -49,31 +65,92 @@ void ACBBoat::FollowLight(float DeltaTime)
 		CurrentPathingState = EvaluateStatePostFollowLight();
 		return;
 	}
-
-	// @NOTE: This might have to be improved, by adding collision detection
+	
 	const FVector Direction = (FollowTarget->GetComponentLocation() - GetActorLocation()).GetSafeNormal();
-	AddActorWorldOffset(Direction * MovementSpeed);
+	AddActorWorldOffset(Direction * MovementSpeed * DeltaTime);
+
+	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
+	if (bDrawDebug)
+	{
+		DrawBoatDebugPathing(Direction);
+	}
 }
 
 void ACBBoat::FollowPath(float DeltaTime)
 {
 	if (!CurrentPath)
 	{
-		// @TODO: Find a new path and set it
-		
+		UE_LOG(CBLog, Warning, TEXT("Boat [%s] has no current path, it is either waiting to receive one, or something is wrong."), *GetNameSafe(this));
+		return;
 	}
 
 	const FVector LocationOnSpline = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
 	const FVector Direction = CurrentPath->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
 	AddActorWorldOffset(Direction * MovementSpeed * DeltaTime);
+
+	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
+    if (bDrawDebug)
+    {
+    	DrawBoatDebugPathing(Direction);
+    }
 }
 
 void ACBBoat::ReturnToPath(float DeltaTime)
 {
-	// @TODO: Generate a path from the boat location to the nearest spline point
-	// @HIGH_PRIORITY
+	if (ReturnToPathPoints.Num() <= 0)
+	{
+		UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), FVector(630.f, 260.f, GetActorLocation().Z));
+		if (NavPath)
+		{
+			ReturnToPathPoints = MoveTemp(NavPath->PathPoints);
+			PointIndex = 0;
+		}
+	}
 
-	CurrentPathingState = EBoatPathingState::FollowingPath;
+	if (ReturnToPathPoints.Num() <= 0)
+	{
+		// Try again to generate a path
+		return;
+	}
+
+	if ((GetActorLocation() - ReturnToPathPoints[PointIndex]).Length() < 3.f)
+	{
+		PointIndex++;
+	}
+
+	// Have we reached the last point?
+	if (PointIndex == ReturnToPathPoints.Num())
+	{
+		CurrentPathingState = EBoatPathingState::FollowingPath;
+		ReturnToPathPoints.Empty();
+		return;
+	}
+
+	const FVector Target =  ReturnToPathPoints[PointIndex];
+	const FVector Direction = (Target - GetActorLocation()).GetSafeNormal();
+	AddActorWorldOffset(Direction * MovementSpeed * DeltaTime);
+
+	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
+	if (bDrawDebug)
+	{
+		DrawBoatDebugPathing(Direction);
+	}
+}
+
+void ACBBoat::LeaveDebris(const FVector& Location)
+{
+	// @NOTE: Potentially randomize the rotation of the debris on an axis
+	GetWorld()->SpawnActor<AActor>(DebrisLeftAfterDestruction, Location, FRotator::ZeroRotator);
+}
+
+void ACBBoat::DrawBoatDebugPathing(const FVector& Direction)
+{
+	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + (Direction * 100.f), 1, FColor::Red, false, -1, 0, 3);
+	
+	for (const FVector& Point : ReturnToPathPoints)
+	{
+		DrawDebugSphere(GetWorld(), Point, 8, 8, FColor::Green);
+	}
 }
 
 void ACBBoat::SetPath_Implementation(USplineComponent* NewPath)
@@ -138,6 +215,18 @@ void ACBBoat::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 
 EBoatPathingState ACBBoat::EvaluateStatePostFollowLight()
 {
-	// @TODO: Determine if the light is close enough to the spline to where we can just keep going, instead of returning to it
-	return EBoatPathingState::ReturningToPath;
+	USplineComponent* SplineComponent = ICBPathProvider::Execute_GetClosestPath(GetWorld()->GetAuthGameMode(), this);
+	if (SplineComponent != CurrentPath)
+	{
+		CurrentPath = SplineComponent;
+	}
+
+	const FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
+	const float DistanceToClosestPathPoint = (ClosestSplinePoint - GetActorLocation()).Length();
+	if (DistanceToClosestPathPoint > MaxDistanceToPathAllowed)
+	{
+		return EBoatPathingState::ReturningToPath;
+	}
+	
+	return EBoatPathingState::FollowingPath;
 }

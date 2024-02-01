@@ -19,7 +19,8 @@ class LIGHTTHEWAVES_API ACBGameMode : public AGameModeBase, public ICBPathProvid
 public:
 
 	/** Path Provider Interface */
-	virtual USplineComponent* GetPath_Implementation() override;
+	virtual USplineComponent* GetRandomPath_Implementation() override;
+	virtual USplineComponent* GetClosestPath_Implementation(AActor* ReferenceActor) override;
 	/** End Path Provider Interface */
 	
 protected:
@@ -28,6 +29,9 @@ protected:
 	
 	UPROPERTY()
 	TArray<USplineComponent*> SplinePaths;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
+	TArray<TSubclassOf<AActor>> SpawnBoatClasses;
 	
 	AActor* SpawnBoat();
 };

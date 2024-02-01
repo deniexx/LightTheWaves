@@ -3,12 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Pawn.h"
 #include "Interface/CBLightInteractor.h"
 #include "Interface/CBPathingActor.h"
 #include "CBBoat.generated.h"
 
 class USphereComponent;
+
 UENUM(BlueprintType)
 enum class EBoatPathingState
 {
@@ -20,7 +21,7 @@ enum class EBoatPathingState
 };
 
 UCLASS()
-class LIGHTTHEWAVES_API ACBBoat : public AActor, public ICBLightInteractor, public ICBPathingActor
+class LIGHTTHEWAVES_API ACBBoat : public APawn, public ICBLightInteractor, public ICBPathingActor
 {
 	GENERATED_BODY()
 	
@@ -60,27 +61,39 @@ public:
 	
 protected:
 
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(VisibleAnywhere, Category = "Boat Stats")
 	TObjectPtr<UStaticMeshComponent> BoatMesh;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(VisibleAnywhere, Category = "Boat Stats")
 	TObjectPtr<USphereComponent> SphereTrigger;
 
+	UPROPERTY()
+	TArray<FVector> ReturnToPathPoints;
+
+	uint32 PointIndex = 0;
+
 	/** How fast does the boat move */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float MovementSpeed = 50.f;
 
 	/** How much points are rewarded upon reaching the docks */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float PointsReward = 100.f;
 
 	/** How much currency is rewarded upon reaching the docks */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float CurrencyReward = 25.f;
 
 	/** How much life is lost when a boat is destroyed */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float LifeLoss = 10.f;
+
+	/** The maximum distance allowed between the boat and path, without having it correct itself(move back towards the path)*/
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float MaxDistanceToPathAllowed = 50.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	TSubclassOf<AActor> DebrisLeftAfterDestruction;
 
 private:
 
@@ -90,7 +103,7 @@ private:
 	TObjectPtr<UPrimitiveComponent> FollowTarget;
 
 	UPROPERTY()
-	TObjectPtr<USplineComponent> TemporaryPath;
+	TArray<FVector> TemporaryPathPoints;
 	
 	UPROPERTY()
 	TObjectPtr<USplineComponent> CurrentPath;
@@ -99,6 +112,11 @@ private:
 	void FollowPath(float DeltaTime);
 	void ReturnToPath(float DeltaTime);
 
+	UFUNCTION(BlueprintCallable)
+	void LeaveDebris(const FVector& Location);
+
+	void DrawBoatDebugPathing(const FVector& Direction);
+	
 	EBoatPathingState EvaluateStatePostFollowLight();
 	
 	FORCEINLINE bool IsFollowingLight() const { return CurrentPathingState == EBoatPathingState::FollowingLight; }
