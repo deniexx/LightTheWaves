@@ -29,4 +29,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, Category = "PathProvider")
 	USplineComponent* GetClosestPath(AActor* ReferenceActor);
+
+	UFUNCTION(BlueprintNativeEvent, Category = "PathProvider")
+	void RegisterPathingActorWithPath(AActor* ActorToRegister, USplineComponent* TargetPath);
 };

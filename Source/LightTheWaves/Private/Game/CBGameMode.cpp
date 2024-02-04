@@ -5,34 +5,30 @@
 
 #include "Actor/CBBoat.h"
 #include "Components/SplineComponent.h"
+#include "Interface/CBPath.h"
 #include "Kismet/GameplayStatics.h"
 #include "LightTheWaves/LightTheWaves.h"
+
+#define BOAT_SPAWN_FORMULA(WaveNumber) WaveNumber
+#define MAX_BOATS_PER_PATH_FORMULA(WaveNumber) 1
 
 void ACBGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-
-	TArray<AActor*> SplineActors;
-	UGameplayStatics::GetAllActorsWithTag(this, FName("Path"), SplineActors);
-
-	for (const AActor* Actor : SplineActors)
-	{
-		if (USplineComponent* SplineComponent = Actor->GetComponentByClass<USplineComponent>())
-		{
-			SplinePaths.Add(SplineComponent);
-		}
-	}
+	
+	UGameplayStatics::GetAllActorsWithTag(this, FName("Path"), PathActors);
 
 	ProcessBoatSpawning();
 }
 
 USplineComponent* ACBGameMode::GetRandomPath_Implementation()
 {
-	if (SplinePaths.Num() > 0)
+	if (PathActors.Num() > 0)
 	{
-		return SplinePaths[FMath::RandRange(0, SplinePaths.Num() - 1)];
+		return ICBPath::Execute_GetPath(PathActors[FMath::RandRange(0, PathActors.Num() - 1)]);
 	}
 
+	UE_LOG(CBLog, Error, TEXT("No Spline Paths available! Could be an issue, or the function was called too early."))
 	return nullptr;
 }
 
@@ -44,14 +40,15 @@ USplineComponent* ACBGameMode::GetClosestPath_Implementation(AActor* ReferenceAc
 		return nullptr;
 	}
 	
-	if (SplinePaths.Num() > 0)
+	if (PathActors.Num() > 0)
 	{
 		const FVector RefActorLocation = ReferenceActor->GetActorLocation();
-		USplineComponent* Closest = SplinePaths[0];
+		USplineComponent* Closest = ICBPath::Execute_GetPath(PathActors[0]);
 		float ClosestDistance = TNumericLimits<float>::Max();
 
-		for (USplineComponent* Spline : SplinePaths)
+		for (AActor* Actor : PathActors)
 		{
+			USplineComponent* Spline = ICBPath::Execute_GetPath(Actor);
 			const float CurrentDistance = (Spline->FindLocationClosestToWorldLocation(RefActorLocation, ESplineCoordinateSpace::World) - RefActorLocation).Length();
 			if (CurrentDistance < ClosestDistance)
 			{
@@ -62,38 +59,129 @@ USplineComponent* ACBGameMode::GetClosestPath_Implementation(AActor* ReferenceAc
 		
 		return Closest;
 	}
-	
+
+	UE_LOG(CBLog, Error, TEXT("No Spline Paths available! Could be an issue, or the function was called too early."))
 	return nullptr;
+}
+
+void ACBGameMode::RegisterPathingActorWithPath_Implementation(AActor* ActorToRegister, USplineComponent* TargetPath)
+{
+	for (AActor* Actor : PathActors)
+	{
+		if (ICBPath::Execute_GetPath(Actor) == TargetPath)
+		{
+			ICBPath::Execute_RegisterBoatOnPath(Actor, ActorToRegister);
+			return;
+		}
+	}
 }
 
 void ACBGameMode::ProcessBoatSpawning()
 {
-	if (BoatSpawningMode == EBoatSpawningMode::None)
+	if (BoatSpawningSettings.BoatSpawningMode == EBoatSpawningMode::None)
 	{
 		return;
 	}
-	
-	float BoatSpawnPeriod = BoatSpawnCurve->GetFloatValue(1);
-	
-	if (BoatSpawningMode == EBoatSpawningMode::MaxPerWave)
-	{
-		// @NOTE: This will need to be improved
-		BoatSpawnPeriod = BoatSpawnCurve->GetFloatValue(1) / 5.f;
-	}
-	
+
+	const float BoatSpawnPeriod = GetBoatSpawnPeriod();
 	GetWorldTimerManager().SetTimer(BoatSpawnTimerHandle, this, &ThisClass::SpawnBoat, BoatSpawnPeriod, false);
 }
 
 void ACBGameMode::SpawnBoat()
 {
-	if (SpawnBoatClasses.Num() <= 0)
+	if (BoatSpawningSettings.SpawnableBoatClasses.Num() <= 0)
 	{
 		checkf(false, TEXT("Spawn Boat Classes in Game Mode is not filled in!"));
 	}
-	
-	AActor* Boat = GetWorld()->SpawnActor<AActor>(SpawnBoatClasses[FMath::RandRange(0, SpawnBoatClasses.Num() - 1)], FActorSpawnParameters());
-	ICBPathingActor::Execute_SetPath(Boat, GetRandomPath());
 
+	TrySpawnBoat();
 	ProcessBoatSpawning();
 }
 
+float ACBGameMode::GetBoatSpawnPeriod()
+{
+	float BoatSpawnPeriod;
+	
+	if (BoatSpawningSettings.bUseCurveForBoatSpawnAmount && BoatSpawningSettings.WaveNumberToSwitchToFormula >= WaveNumber)
+	{
+		BoatSpawnPeriod = BoatSpawningSettings.BoatSpawnCurve->GetFloatValue(WaveNumber);
+	}
+	else if (!BoatSpawningSettings.bUseCurveForBoatSpawnAmount && BoatSpawningSettings.BoatSpawnArray.Num() > WaveNumber)
+	{
+		BoatSpawnPeriod = BoatSpawningSettings.BoatSpawnArray[WaveNumber];
+	}
+	else
+	{
+		BoatSpawnPeriod = BOAT_SPAWN_FORMULA(WaveNumber);
+	}
+	
+	if (BoatSpawningSettings.BoatSpawningMode == EBoatSpawningMode::Period)
+	{
+		return BoatSpawnPeriod;
+	}
+	
+	return BoatSpawnPeriod / WaveDuration;
+}
+
+bool ACBGameMode::TrySpawnBoat()
+{
+	float MaxBoatsPerPath;
+	if (BoatSpawningSettings.bUseCurveForMaxBoatsPerPath && BoatSpawningSettings.WaveNumberToSwitchToFormula >= WaveNumber)
+	{
+		MaxBoatsPerPath = BoatSpawningSettings.MaxBoatsPerPathCurve->GetFloatValue(WaveNumber);
+	}
+	else if (BoatSpawningSettings.MaxBoatsPerPath.Num() >= WaveNumber)
+	{
+		MaxBoatsPerPath = BoatSpawningSettings.MaxBoatsPerPath[WaveNumber];
+	}
+	else
+	{
+		MaxBoatsPerPath = MAX_BOATS_PER_PATH_FORMULA(WaveNumber);
+	}
+
+	AActor* FreePathActor = nullptr;
+
+	if (MaxBoatsPerPath <= 0)
+	{
+		AActor* Boat = GetWorld()->SpawnActor<AActor>(GetRandomSpawnableBoat(), FActorSpawnParameters());
+		ICBPathingActor::Execute_SetPath(Boat, GetRandomPath());
+		return true;
+	}
+	
+	if (IsAnyPathFree(MaxBoatsPerPath, FreePathActor))
+	{
+		AActor* Boat = GetWorld()->SpawnActor<AActor>(GetRandomSpawnableBoat(), FActorSpawnParameters());
+		ICBPathingActor::Execute_SetPath(Boat, ICBPath::Execute_GetPath(FreePathActor));
+		return true;
+	}
+	
+	return false;
+}
+
+bool ACBGameMode::IsAnyPathFree(int32 MaxBoatsPerPath, AActor*& OutPath)
+{
+	TArray<AActor*> FreePaths;
+	
+	for (AActor* Actor : PathActors)
+	{
+		if (ICBPath::Execute_GetNumberOfBoatsOnPath(Actor) < MaxBoatsPerPath)
+		{
+			FreePaths.Add(Actor);
+		}
+	}
+
+	if (FreePaths.Num() == 0)
+	{
+		return false;
+	}
+
+	// Grab a random free path, that way we don't just go in sequence
+	OutPath = FreePaths[FMath::RandRange(0, FreePaths.Num() - 1)];
+	return true;
+}
+
+TSubclassOf<AActor> ACBGameMode::GetRandomSpawnableBoat()
+{
+	// @TODO: Expand this function to be able to evaluate randomization weights, etc...
+	return BoatSpawningSettings.SpawnableBoatClasses[FMath::RandRange(0, BoatSpawningSettings.SpawnableBoatClasses.Num() - 1)];
+}

@@ -161,6 +161,11 @@ void ACBBoat::SetPath_Implementation(USplineComponent* NewPath)
 	CurrentPathingState = EBoatPathingState::FollowingPath;
 }
 
+FOnPathingActorLeftPath& ACBBoat::PathingActorLeftPathEvent()
+{
+	return OnPathingActorLeftPath;
+}
+
 void ACBBoat::OnLightFocused_Implementation(UPrimitiveComponent* TargetComponent)
 {
 	if (IsFollowingLight())
@@ -218,7 +223,9 @@ EBoatPathingState ACBBoat::EvaluateStatePostFollowLight()
 	USplineComponent* SplineComponent = ICBPathProvider::Execute_GetClosestPath(GetWorld()->GetAuthGameMode(), this);
 	if (SplineComponent != CurrentPath)
 	{
+		OnPathingActorLeftPath.Broadcast(this);
 		CurrentPath = SplineComponent;
+		ICBPathProvider::Execute_RegisterPathingActorWithPath(GetWorld()->GetAuthGameMode(), this, SplineComponent);
 	}
 
 	const FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);

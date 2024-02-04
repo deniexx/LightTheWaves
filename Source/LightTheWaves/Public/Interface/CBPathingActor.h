@@ -8,6 +8,8 @@
 
 class USplineComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPathingActorLeftPath, AActor*, PathingActor);
+
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UCBPathingActor : public UInterface
@@ -27,4 +29,6 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, Category = "PathingActor")
 	void SetPath(USplineComponent* NewPath);
+	
+	virtual FOnPathingActorLeftPath& PathingActorLeftPathEvent() = 0;
 };

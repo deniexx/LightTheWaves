@@ -31,6 +31,7 @@ public:
 	
 	/** Pathing Actor Interface */
 	virtual void SetPath_Implementation(USplineComponent* NewPath) override;
+	virtual FOnPathingActorLeftPath& PathingActorLeftPathEvent() override;
 	/** End Pathing Actor Interface */
 	
 	/** Light Interactor interface */
@@ -41,12 +42,12 @@ public:
 #if WITH_EDITORONLY_DATA	
 	/** When TRUE, updating the RatioCurrencyToPoints variable will update the currency based on the points
 	  * When FALSE it will update the points based on the currency */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	bool bUpdateBasedOnPoints = false;
 
 	/** How much points is one currency(e.g 4 means that 1 currency is worth 4 points(Currency * Ratio) and 1 point is worth 0.25 currency(Points * (1 / Ratio)))
 	 * Changing this will update the values using the ratio based on the bUpdateRatioBasedOnPoints boolean value */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Stats")
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float RatioCurrencyToPoints = 4;
 #endif
 
@@ -61,10 +62,10 @@ public:
 	
 protected:
 
-	UPROPERTY(VisibleAnywhere, Category = "Boat Stats")
+	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> BoatMesh;
 
-	UPROPERTY(VisibleAnywhere, Category = "Boat Stats")
+	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USphereComponent> SphereTrigger;
 
 	UPROPERTY()
@@ -94,6 +95,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TSubclassOf<AActor> DebrisLeftAfterDestruction;
+
+	UPROPERTY(BlueprintAssignable, Category = "Boat Properties")
+	FOnPathingActorLeftPath OnPathingActorLeftPath;
 
 private:
 
