@@ -5,12 +5,15 @@
 
 #include "Actor/CBBoat.h"
 #include "Components/SplineComponent.h"
+#include "EnvironmentQuery/EnvQueryInstanceBlueprintWrapper.h"
+#include "EnvironmentQuery/EnvQueryManager.h"
 #include "Interface/CBPath.h"
 #include "Kismet/GameplayStatics.h"
 #include "LightTheWaves/LightTheWaves.h"
 
 #define BOAT_SPAWN_FORMULA(WaveNumber) WaveNumber
 #define MAX_BOATS_PER_PATH_FORMULA(WaveNumber) 1
+#define MONSTER_SPAWN_FORMULA(WaveNumber) WaveNumber
 
 void ACBGameMode::BeginPlay()
 {
@@ -98,11 +101,58 @@ void ACBGameMode::SpawnBoat()
 	ProcessBoatSpawning();
 }
 
+void ACBGameMode::ProcessMonsterSpawning()
+{
+	float MonsterSpawnPeriod;
+
+	if (MonsterSpawningSettings.bUseCurveForMonsterSpawnPeriod && WaveNumberToSwitchToFormula >= WaveNumber)
+	{
+		MonsterSpawnPeriod = MonsterSpawningSettings.MonsterSpawnCurve->GetFloatValue(WaveNumber);
+	}
+	else if (!MonsterSpawningSettings.bUseCurveForMonsterSpawnPeriod && MonsterSpawningSettings.MonsterSpawnPeriods.Num() > WaveNumber)
+	{
+		MonsterSpawnPeriod = MonsterSpawningSettings.MonsterSpawnPeriods[WaveNumber];
+	}
+	else
+	{
+		MonsterSpawnPeriod = MONSTER_SPAWN_FORMULA(WaveNumber);
+	}
+
+	GetWorldTimerManager().SetTimer(MonsterSpawnTimerHandle, this, &ThisClass::RunMonsterSpawnEQS, MonsterSpawnPeriod, false);
+}
+
+void ACBGameMode::RunMonsterSpawnEQS()
+{
+	UEnvQueryInstanceBlueprintWrapper* QueryInstance = UEnvQueryManager::RunEQSQuery(this, MonsterSpawnQuery, this, EEnvQueryRunMode::RandomBest5Pct, nullptr);
+
+	if (ensure(QueryInstance))
+	{
+		QueryInstance->GetOnQueryFinishedEvent().AddDynamic(this, &ThisClass::SpawnMonster);
+	}
+}
+
+void ACBGameMode::SpawnMonster(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus)
+{
+	if (QueryStatus != EEnvQueryStatus::Success)
+	{
+		UE_LOG(CBLog, Warning, TEXT("Monster Spawn Query Failed!"));
+		return;
+	}
+
+	const TArray<FVector> Locations = QueryInstance->GetResultsAsLocations();
+	if (Locations.Num() > 0)
+	{
+		// @TODO: Check if this needs to be adjusted so that it's fully on the spline
+		const FVector RandomLocation = Locations[FMath::RandRange(0, Locations.Num() - 1)];
+		AActor* NewMonster = GetWorld()->SpawnActor<AActor>(MonsterSpawningSettings.MonsterClass, RandomLocation, FRotator::ZeroRotator);
+	}
+}
+
 float ACBGameMode::GetBoatSpawnPeriod()
 {
 	float BoatSpawnPeriod;
 	
-	if (BoatSpawningSettings.bUseCurveForBoatSpawnAmount && BoatSpawningSettings.WaveNumberToSwitchToFormula >= WaveNumber)
+	if (BoatSpawningSettings.bUseCurveForBoatSpawnAmount && WaveNumberToSwitchToFormula >= WaveNumber)
 	{
 		BoatSpawnPeriod = BoatSpawningSettings.BoatSpawnCurve->GetFloatValue(WaveNumber);
 	}
@@ -126,7 +176,7 @@ float ACBGameMode::GetBoatSpawnPeriod()
 bool ACBGameMode::TrySpawnBoat()
 {
 	float MaxBoatsPerPath;
-	if (BoatSpawningSettings.bUseCurveForMaxBoatsPerPath && BoatSpawningSettings.WaveNumberToSwitchToFormula >= WaveNumber)
+	if (BoatSpawningSettings.bUseCurveForMaxBoatsPerPath && WaveNumberToSwitchToFormula >= WaveNumber)
 	{
 		MaxBoatsPerPath = BoatSpawningSettings.MaxBoatsPerPathCurve->GetFloatValue(WaveNumber);
 	}
