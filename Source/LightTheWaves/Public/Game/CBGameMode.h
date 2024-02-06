@@ -3,9 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EnvironmentQuery/EnvQueryInstanceBlueprintWrapper.h"
 #include "Interface/CBPathProvider.h"
 #include "GameFramework/GameModeBase.h"
 #include "CBGameMode.generated.h"
+
+class UEnvQuery;
 
 UENUM(BlueprintType)
 enum class EBoatSpawningMode
@@ -64,10 +67,24 @@ struct FBoatSpawningSettings
 	/** A curve of period of boat spawning(duration between spawns) to wave number */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "bUseCurveForBoatSpawnAmount", EditConditionHides))
 	TObjectPtr<UCurveFloat> BoatSpawnCurve;
+};
 
-	/** The wave number to switch to using formula for getting the number of boats to spawn and the maximum number of boats per path */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "bUseCurveForBoatSpawnCurve||bUseCurveForMaxBoatsPerPath", EditConditionHides))
-	int32 WaveNumberToSwitchToFormula = 999;
+USTRUCT(BlueprintType)
+struct FMonsterSpawningSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	bool bUseCurveForMonsterSpawnPeriod = false;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="!bUseCurveForMonsterSpawnPeriod", EditConditionHides))
+	TArray<float> MonsterSpawnPeriods;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="!bUseCurveForMonsterSpawnPeriod", EditConditionHides))
+	TObjectPtr<UCurveFloat> MonsterSpawnCurve;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	TSubclassOf<AActor> MonsterClass;
 };
 
 class USplineComponent;
@@ -93,15 +110,31 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
 	FBoatSpawningSettings BoatSpawningSettings;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	FMonsterSpawningSettings MonsterSpawningSettings;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	TObjectPtr<UEnvQuery> MonsterSpawnQuery;
+
+	/** The wave number to switch to using formula for spawn settings */
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
+	int32 WaveNumberToSwitchToFormula = 999;
+
 	UPROPERTY()
 	TArray<AActor*> PathActors;
 	
 	UPROPERTY()
 	FTimerHandle BoatSpawnTimerHandle;
+
+	UPROPERTY()
+	FTimerHandle MonsterSpawnTimerHandle;
 	
 	UFUNCTION()
 	void SpawnBoat();
+
+	UFUNCTION()
+	void SpawnMonster(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus);
 
 	/** DUMMY VARIABLE */
 	int32 WaveNumber = 1;
@@ -113,6 +146,8 @@ private:
 	
 	float GetBoatSpawnPeriod();
 	void ProcessBoatSpawning();
+	void ProcessMonsterSpawning();
+	void RunMonsterSpawnEQS();
 	bool TrySpawnBoat();
 
 	/** Will grab a random free path and put in the OutPath variable(can fail) */
