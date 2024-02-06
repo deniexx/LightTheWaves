@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "Interface/CBLightInteractor.h"
 #include "Interface/CBPathingActor.h"
+#include "Interface/CBDestroyableObject.h"
 #include "CBBoat.generated.h"
 
 class USphereComponent;
@@ -21,7 +22,7 @@ enum class EBoatPathingState
 };
 
 UCLASS()
-class LIGHTTHEWAVES_API ACBBoat : public APawn, public ICBLightInteractor, public ICBPathingActor
+class LIGHTTHEWAVES_API ACBBoat : public APawn, public ICBLightInteractor, public ICBPathingActor, public ICBDestroyableObject
 {
 	GENERATED_BODY()
 	
@@ -38,6 +39,10 @@ public:
 	virtual void OnLightFocused_Implementation(UPrimitiveComponent* TargetComponent) override;
 	virtual void OnLightFocusEnd_Implementation() override;
 	/** End Light Interactor interface */
+
+	/**Destroyable Object Interface */
+	virtual void OnDestroyed_Implementation(AActor* DestroyedActor) override;
+	/**End Destroyable Object interface */
 
 #if WITH_EDITORONLY_DATA	
 	/** When TRUE, updating the RatioCurrencyToPoints variable will update the currency based on the points
