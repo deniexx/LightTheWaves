@@ -82,6 +82,9 @@ struct FMonsterSpawningSettings
 
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="!bUseCurveForMonsterSpawnPeriod", EditConditionHides))
 	TObjectPtr<UCurveFloat> MonsterSpawnCurve;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+    float MaxRadiusForLocationOffset = 25.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	TSubclassOf<AActor> MonsterClass;
@@ -153,4 +156,6 @@ private:
 	/** Will grab a random free path and put in the OutPath variable(can fail) */
 	bool IsAnyPathFree(int32 MaxBoatsPerPath, AActor*& OutPath);
 	TSubclassOf<AActor> GetRandomSpawnableBoat();
+
+	USplineComponent* GetSplineClosestToLocation(const FVector& Location);
 };

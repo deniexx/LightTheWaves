@@ -22,6 +22,7 @@ void ACBGameMode::BeginPlay()
 	UGameplayStatics::GetAllActorsWithTag(this, FName("Path"), PathActors);
 
 	ProcessBoatSpawning();
+	ProcessMonsterSpawning();
 }
 
 USplineComponent* ACBGameMode::GetRandomPath_Implementation()
@@ -43,28 +44,7 @@ USplineComponent* ACBGameMode::GetClosestPath_Implementation(AActor* ReferenceAc
 		return nullptr;
 	}
 	
-	if (PathActors.Num() > 0)
-	{
-		const FVector RefActorLocation = ReferenceActor->GetActorLocation();
-		USplineComponent* Closest = ICBPath::Execute_GetPath(PathActors[0]);
-		float ClosestDistance = TNumericLimits<float>::Max();
-
-		for (AActor* Actor : PathActors)
-		{
-			USplineComponent* Spline = ICBPath::Execute_GetPath(Actor);
-			const float CurrentDistance = (Spline->FindLocationClosestToWorldLocation(RefActorLocation, ESplineCoordinateSpace::World) - RefActorLocation).Length();
-			if (CurrentDistance < ClosestDistance)
-			{
-				ClosestDistance = CurrentDistance;
-				Closest = Spline;
-			}
-		}
-		
-		return Closest;
-	}
-
-	UE_LOG(CBLog, Error, TEXT("No Spline Paths available! Could be an issue, or the function was called too early."))
-	return nullptr;
+	return GetSplineClosestToLocation(ReferenceActor->GetActorLocation());
 }
 
 void ACBGameMode::RegisterPathingActorWithPath_Implementation(AActor* ActorToRegister, USplineComponent* TargetPath)
@@ -111,7 +91,7 @@ void ACBGameMode::ProcessMonsterSpawning()
 	}
 	else if (!MonsterSpawningSettings.bUseCurveForMonsterSpawnPeriod && MonsterSpawningSettings.MonsterSpawnPeriods.Num() > WaveNumber)
 	{
-		MonsterSpawnPeriod = MonsterSpawningSettings.MonsterSpawnPeriods[WaveNumber];
+		MonsterSpawnPeriod = MonsterSpawningSettings.MonsterSpawnPeriods[WaveNumber - 1];
 	}
 	else
 	{
@@ -136,15 +116,26 @@ void ACBGameMode::SpawnMonster(UEnvQueryInstanceBlueprintWrapper* QueryInstance,
 	if (QueryStatus != EEnvQueryStatus::Success)
 	{
 		UE_LOG(CBLog, Warning, TEXT("Monster Spawn Query Failed!"));
+		ProcessMonsterSpawning();
 		return;
 	}
 
 	const TArray<FVector> Locations = QueryInstance->GetResultsAsLocations();
 	if (Locations.Num() > 0)
 	{
-		// @TODO: Check if this needs to be adjusted so that it's fully on the spline
 		const FVector RandomLocation = Locations[FMath::RandRange(0, Locations.Num() - 1)];
-		AActor* NewMonster = GetWorld()->SpawnActor<AActor>(MonsterSpawningSettings.MonsterClass, RandomLocation, FRotator::ZeroRotator);
+		const USplineComponent* ClosestSpline = GetSplineClosestToLocation(RandomLocation);
+		FVector SpawnLocation = ClosestSpline->FindLocationClosestToWorldLocation(RandomLocation, ESplineCoordinateSpace::World);
+		const float XOffset = FMath::FRandRange(0, MonsterSpawningSettings.MaxRadiusForLocationOffset);
+		const float YOffset = FMath::FRandRange(0, MonsterSpawningSettings.MaxRadiusForLocationOffset);
+		SpawnLocation += FVector(XOffset, YOffset, 0.f);
+
+		// @NOTE: Might be worth to check if the path has a current boat(if prediction is added a future boat incoming)#
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		AActor* NewMonster = GetWorld()->SpawnActor<AActor>(MonsterSpawningSettings.MonsterClass, SpawnLocation, FRotator::ZeroRotator, SpawnParameters);
+
+		ProcessMonsterSpawning();
 	}
 }
 
@@ -182,7 +173,7 @@ bool ACBGameMode::TrySpawnBoat()
 	}
 	else if (BoatSpawningSettings.MaxBoatsPerPath.Num() >= WaveNumber)
 	{
-		MaxBoatsPerPath = BoatSpawningSettings.MaxBoatsPerPath[WaveNumber];
+		MaxBoatsPerPath = BoatSpawningSettings.MaxBoatsPerPath[WaveNumber - 1];
 	}
 	else
 	{
@@ -193,14 +184,18 @@ bool ACBGameMode::TrySpawnBoat()
 
 	if (MaxBoatsPerPath <= 0)
 	{
-		AActor* Boat = GetWorld()->SpawnActor<AActor>(GetRandomSpawnableBoat(), FActorSpawnParameters());
-		ICBPathingActor::Execute_SetPath(Boat, GetRandomPath());
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		AActor* Boat = GetWorld()->SpawnActor<AActor>(GetRandomSpawnableBoat(), SpawnParameters);
+		ICBPathingActor::Execute_SetPath(Boat, Execute_GetRandomPath(this));
 		return true;
 	}
 	
 	if (IsAnyPathFree(MaxBoatsPerPath, FreePathActor))
 	{
-		AActor* Boat = GetWorld()->SpawnActor<AActor>(GetRandomSpawnableBoat(), FActorSpawnParameters());
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		AActor* Boat = GetWorld()->SpawnActor<AActor>(GetRandomSpawnableBoat(), SpawnParameters);
 		ICBPathingActor::Execute_SetPath(Boat, ICBPath::Execute_GetPath(FreePathActor));
 		return true;
 	}
@@ -234,4 +229,29 @@ TSubclassOf<AActor> ACBGameMode::GetRandomSpawnableBoat()
 {
 	// @TODO: Expand this function to be able to evaluate randomization weights, etc...
 	return BoatSpawningSettings.SpawnableBoatClasses[FMath::RandRange(0, BoatSpawningSettings.SpawnableBoatClasses.Num() - 1)];
+}
+
+USplineComponent* ACBGameMode::GetSplineClosestToLocation(const FVector& Location)
+{
+	if (PathActors.Num() > 0)
+	{
+		USplineComponent* Closest = ICBPath::Execute_GetPath(PathActors[0]);
+		float ClosestDistance = TNumericLimits<float>::Max();
+
+		for (AActor* Actor : PathActors)
+		{
+			USplineComponent* Spline = ICBPath::Execute_GetPath(Actor);
+			const float CurrentDistance = (Spline->FindLocationClosestToWorldLocation(Location, ESplineCoordinateSpace::World) - Location).Length();
+			if (CurrentDistance < ClosestDistance)
+			{
+				ClosestDistance = CurrentDistance;
+				Closest = Spline;
+			}
+		}
+		
+		return Closest;
+	}
+
+	UE_LOG(CBLog, Error, TEXT("No Spline Paths available! Could be an issue, or the function was called too early."))
+	return nullptr;
 }
