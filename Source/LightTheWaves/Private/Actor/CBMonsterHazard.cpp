@@ -4,6 +4,7 @@
 #include "Actor/CBMonsterHazard.h"
 
 #include "Interface/CBDestroyableObject.h"
+#include "LightTheWaves/LightTheWaves.h"
 
 // Sets default values
 ACBMonsterHazard::ACBMonsterHazard()
@@ -20,22 +21,33 @@ ACBMonsterHazard::ACBMonsterHazard()
 	CapsuleTrigger->SetCollisionResponseToAllChannels(ECR_Overlap);
 }
 
-void ACBMonsterHazard::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ACBMonsterHazard::Destroyed()
 {
-	if(OtherActor->Implements<UCBDestroyableObject>())
-	{
-		ICBDestroyableObject::Execute_OnDestroyed(OtherActor, this);
-	}
+	OnMonsterDead.Broadcast(this);
+	Super::Destroyed();
 }
 
-// Called when the game starts or when spawned
-void ACBMonsterHazard::BeginPlay()
+FOnMonsterDead& ACBMonsterHazard::OnMonsterDeadEvent()
 {
-	Super::BeginPlay();
+	return OnMonsterDead;
+}
 
+void ACBMonsterHazard::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	SetLifeSpan(LifeSpan);
 	CapsuleTrigger->OnComponentBeginOverlap.AddDynamic(this, &ACBMonsterHazard::OnOverlap);
-	
+}
+
+void ACBMonsterHazard::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if(OtherActor && IsValid(OtherActor) && OtherActor->Implements<UCBDestroyableObject>())
+	{
+		ICBDestroyableObject::Execute_OnDestroyed(OtherActor, this);
+		Destroy();
+	}
 }
 
 

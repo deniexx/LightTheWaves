@@ -29,6 +29,24 @@ struct FBoatSpawningSettings
 	/** The classes of boats to be spawned(this can be improved by adding in weights for randomization, etc...) */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
 	TArray<TSubclassOf<AActor>> SpawnableBoatClasses;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
+	TArray<int32> MaxBoats;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
+	float MinimumDistanceFromPathStart = 300.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
+	float MinTimeVariation = -0.5f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
+	float MaxTimeVariation = 3.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
+	float MinDistanceVariation = -100.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
+	float MaxDistanceVariation = 100.f;
 	
 	/** Should a curve or the array be used to find the maximum number of boats per path
 	 * TRUE - Curve will be used
@@ -75,17 +93,42 @@ struct FMonsterSpawningSettings
 	GENERATED_BODY()
 
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	float MinTimeVariation = -0.5f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	float MaxTimeVariation = 3.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	bool bUseCurveForMonsterSpawnPeriod = false;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="!bUseCurveForMonsterSpawnPeriod", EditConditionHides))
 	TArray<float> MonsterSpawnPeriods;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="!bUseCurveForMonsterSpawnPeriod", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseCurveForMonsterSpawnPeriod", EditConditionHides))
 	TObjectPtr<UCurveFloat> MonsterSpawnCurve;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	bool bUseCurveForMaxMonstersOnPath = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	bool bUseBoatsAsForMaxMonsterOnPath = false;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="!bUseCurveForMaxMonstersOnPath && !bUseBoatsAsForMaxMonsterOnPath", EditConditionHides))
+	TArray<float> MaxMonstersOnPath;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseCurveForMaxMonstersOnPath && !bUseBoatsAsForMaxMonsterOnPath", EditConditionHides))
+	TObjectPtr<UCurveFloat> MaxMonstersOnPathCurve;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
     float MaxRadiusForLocationOffset = 25.f;
 
+	/** This number will be added to the number of boats on the path to get the max number of monster spawnable on the path */
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseBoatsAsForMaxMonsterOnPath", EditConditionHides))
+	int32 AdditionalMaxMonstersPerPath = 1;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	float MinimumDistanceFromPathStart = 1000.f;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	TSubclassOf<AActor> MonsterClass;
 };
@@ -134,7 +177,7 @@ protected:
 	FTimerHandle MonsterSpawnTimerHandle;
 	
 	UFUNCTION()
-	void SpawnBoat();
+	void SpawnBoat_TimerElapsed();
 
 	UFUNCTION()
 	void SpawnMonster(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus);
@@ -148,14 +191,19 @@ protected:
 private:
 	
 	float GetBoatSpawnPeriod();
+	void SpawnBoat(AActor* PathActor);
 	void ProcessBoatSpawning();
 	void ProcessMonsterSpawning();
 	void RunMonsterSpawnEQS();
 	bool TrySpawnBoat();
+	bool IsAtMaxBoats();
+
+	int32 GetMaxAllowedMonstersOnPath(AActor* Path);
 
 	/** Will grab a random free path and put in the OutPath variable(can fail) */
 	bool IsAnyPathFree(int32 MaxBoatsPerPath, AActor*& OutPath);
 	TSubclassOf<AActor> GetRandomSpawnableBoat();
 
-	USplineComponent* GetSplineClosestToLocation(const FVector& Location);
+	AActor* GetRandomSpline(USplineComponent*& OutSplineComponent);
+	AActor* GetSplineClosestToLocation(const FVector& Location, USplineComponent*& OutSplineComponent);
 };

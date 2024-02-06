@@ -193,6 +193,7 @@ void ACBBoat::OnLightFocusEnd_Implementation()
 void ACBBoat::OnDestroyed_Implementation(AActor* DestroyedActor)
 {
 	LeaveDebris(GetActorLocation());
+	OnPathingActorLeftPath.Broadcast(this);
 	Destroy();
 }
 

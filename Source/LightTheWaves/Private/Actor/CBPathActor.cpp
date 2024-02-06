@@ -4,6 +4,7 @@
 #include "Actor/CBPathActor.h"
 
 #include "Components/SplineComponent.h"
+#include "Interface/CBMonsterInterface.h"
 #include "Interface/CBPathingActor.h"
 
 // Sets default values
@@ -21,7 +22,8 @@ ACBPathActor::ACBPathActor()
 void ACBPathActor::BeginPlay()
 {
 	Super::BeginPlay();
-	PathingActorsOnPath = 0;
+
+	MonstersOnPath = 0;
 }
 
 USplineComponent* ACBPathActor::GetPath_Implementation()
@@ -31,17 +33,53 @@ USplineComponent* ACBPathActor::GetPath_Implementation()
 
 int32 ACBPathActor::GetNumberOfBoatsOnPath_Implementation()
 {
-	return PathingActorsOnPath;
+	return PathingActorsOnPath.Num();
 }
 
 void ACBPathActor::RegisterBoatOnPath_Implementation(AActor* Boat)
 {
-	// @NOTE: This might need to be expanded
-	PathingActorsOnPath = FMath::Clamp(PathingActorsOnPath - 1, 0, PathingActorsOnPath);
+	PathingActorsOnPath.AddUnique(Boat);
 	Cast<ICBPathingActor>(Boat)->PathingActorLeftPathEvent().AddDynamic(this, &ThisClass::OnPathingActorLeftPath);
+}
+
+int32 ACBPathActor::GetNumberOfMonstersOnPath_Implementation()
+{
+	return MonstersOnPath;
+}
+
+void ACBPathActor::AddMonsterToPath_Implementation(AActor* Monster)
+{
+	if (!Monster)
+	{
+		return;
+	}
+	
+	++MonstersOnPath;
+	Cast<ICBMonsterInterface>(Monster)->OnMonsterDeadEvent().AddDynamic(this, &ThisClass::OnMonsterDead);
+}
+
+bool ACBPathActor::IsBoatWithinDistanceFromStart_Implementation(float Distance)
+{
+	if (PathingActorsOnPath.Num() == 0)
+	{
+		return true;
+	}
+	
+	const FVector Start = SplineComponent->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World);
+	if ((PathingActorsOnPath.Last()->GetActorLocation() - Start).Length() > Distance)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void ACBPathActor::OnMonsterDead(AActor* Actor)
+{
+	MonstersOnPath = FMath::Clamp(MonstersOnPath - 1, 0, MonstersOnPath);
 }
 
 void ACBPathActor::OnPathingActorLeftPath(AActor* PathingActor)
 {
-	--PathingActorsOnPath;
+	PathingActorsOnPath.Remove(PathingActor);
 }
