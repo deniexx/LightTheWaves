@@ -92,12 +92,18 @@ struct FMonsterSpawningSettings
 {
 	GENERATED_BODY()
 
+	/** The minimum value to be used for the spawn period randomization */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	float MinTimeVariation = -0.5f;
-	
+
+	/** The maximum value to be used for the spawn period randomization */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	float MaxTimeVariation = 3.f;
-	
+
+	/** Should a curve or the array be used to find the monster spawning period
+	 * TRUE - Curve will be used
+	 * FALSE - Array will be used
+	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	bool bUseCurveForMonsterSpawnPeriod = false;
 	
@@ -107,28 +113,41 @@ struct FMonsterSpawningSettings
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseCurveForMonsterSpawnPeriod", EditConditionHides))
 	TObjectPtr<UCurveFloat> MonsterSpawnCurve;
 
+	/** Should a curve or the array be used to find the max numbers of monsters spawned on a given path
+	 * TRUE - Curve will be used
+	 * FALSE - Array will be used
+	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	bool bUseCurveForMaxMonstersOnPath = false;
 
+	/** Should the number of boats be used to find the max number of spawned spawned on it
+	 *  TRUE - The number of boats will be used (by also adding the AdditionalMaxMonstersPerPath)
+	 *  FALSE - The curve of the array will be used
+	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	bool bUseBoatsAsForMaxMonsterOnPath = false;
-	
+
+	/** An array containing the max number of monsters on a path for a given wave */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="!bUseCurveForMaxMonstersOnPath && !bUseBoatsAsForMaxMonsterOnPath", EditConditionHides))
 	TArray<float> MaxMonstersOnPath;
 
+	/** A curve containing the max number of monsters on a path for a given wave */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseCurveForMaxMonstersOnPath && !bUseBoatsAsForMaxMonsterOnPath", EditConditionHides))
 	TObjectPtr<UCurveFloat> MaxMonstersOnPathCurve;
-	
+
+	/** The maximum radius for offsetting the monster spawn location (make them look a bit more realistic) */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
-    float MaxRadiusForLocationOffset = 25.f;
+    float MaxRadiusForLocationOffset = 50.f;
 
 	/** This number will be added to the number of boats on the path to get the max number of monster spawnable on the path */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseBoatsAsForMaxMonsterOnPath", EditConditionHides))
 	int32 AdditionalMaxMonstersPerPath = 1;
 
+	/** The minimum distance from the path starting point where monsters can spawn */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	float MinimumDistanceFromPathStart = 1000.f;
-	
+
+	/** The monster class to be spawned (can be changed to an array if we decide to have multiple monsters) */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	TSubclassOf<AActor> MonsterClass;
 };
@@ -154,12 +173,15 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	/** The settings that will be used when spawning boats */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
 	FBoatSpawningSettings BoatSpawningSettings;
 
+	/** The settings that will be used when spawning monsters */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	FMonsterSpawningSettings MonsterSpawningSettings;
-	
+
+	/** The environment query that will be used to find monster spawn locations */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	TObjectPtr<UEnvQuery> MonsterSpawnQuery;
 

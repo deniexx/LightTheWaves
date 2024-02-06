@@ -111,7 +111,7 @@ void ACBGameMode::ProcessMonsterSpawning()
 
 void ACBGameMode::RunMonsterSpawnEQS()
 {
-	UEnvQueryInstanceBlueprintWrapper* QueryInstance = UEnvQueryManager::RunEQSQuery(this, MonsterSpawnQuery, this, EEnvQueryRunMode::RandomBest5Pct, nullptr);
+	UEnvQueryInstanceBlueprintWrapper* QueryInstance = UEnvQueryManager::RunEQSQuery(this, MonsterSpawnQuery, this, EEnvQueryRunMode::RandomBest25Pct, nullptr);
 
 	if (ensure(QueryInstance))
 	{
@@ -136,8 +136,8 @@ void ACBGameMode::SpawnMonster(UEnvQueryInstanceBlueprintWrapper* QueryInstance,
 		USplineComponent* ClosestSpline;
 		AActor* SplineActor = GetSplineClosestToLocation(RandomLocation, ClosestSpline);
 		FVector SpawnLocation = ClosestSpline->FindLocationClosestToWorldLocation(RandomLocation, ESplineCoordinateSpace::World);
-		const float XOffset = FMath::FRandRange(0, MonsterSpawningSettings.MaxRadiusForLocationOffset);
-		const float YOffset = FMath::FRandRange(0, MonsterSpawningSettings.MaxRadiusForLocationOffset);
+		const float XOffset = FMath::FRandRange(-MonsterSpawningSettings.MaxRadiusForLocationOffset, MonsterSpawningSettings.MaxRadiusForLocationOffset);
+		const float YOffset = FMath::FRandRange(-MonsterSpawningSettings.MaxRadiusForLocationOffset, MonsterSpawningSettings.MaxRadiusForLocationOffset);
 		SpawnLocation += FVector(XOffset, YOffset, 0.f);
 
 		if (bShowDebug)
