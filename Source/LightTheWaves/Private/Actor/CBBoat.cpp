@@ -190,6 +190,12 @@ void ACBBoat::OnLightFocusEnd_Implementation()
 	CurrentPathingState = EvaluateStatePostFollowLight();
 }
 
+void ACBBoat::OnDestroyed_Implementation(AActor* DestroyedActor)
+{
+	LeaveDebris(GetActorLocation());
+	Destroy();
+}
+
 #if WITH_EDITOR
 void ACBBoat::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
