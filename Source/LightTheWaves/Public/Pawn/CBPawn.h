@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "CBPawn.generated.h"
 
+class UBoxComponent;
 class UInputAction;
 class UInputMappingContext;
 class UCameraComponent;
@@ -23,6 +24,12 @@ public:
 	ACBPawn();
 
 protected:
+	UFUNCTION()
+	void HookHandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp, int OtherBodyIndex, bool bFromSweep, const FHitResult& HitResult);
+
+	UFUNCTION()
+	void HookHandEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp, int OtherBodyIndex);
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -79,6 +86,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<UMotionControllerComponent> MotionControllerRightAim;
+
+	UPROPERTY(VisibleAnywhere, Category = "Component")
+	TObjectPtr<UBoxComponent> RightHandOverlapBox;
 	/** End Right Hand */
 
 	/** The default mapping context, can be used for debug to debug input and stuff */

@@ -3,23 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/CurveTable.h"
 #include "EnvironmentQuery/EnvQueryInstanceBlueprintWrapper.h"
 #include "Interface/CBPathProvider.h"
 #include "GameFramework/GameModeBase.h"
 #include "CBGameMode.generated.h"
 
 class UEnvQuery;
-
-UENUM(BlueprintType)
-enum class EBoatSpawningMode
-{
-	// Spawns boats within a given period(delay between spawns)
-	Period,
-	// Spawns boats throughout the round based on a maximum number of boats to be spawned
-	MaxPerWave,
-	// Spawning is disabled
-	None,
-};
 
 USTRUCT(BlueprintType)
 struct FBoatSpawningSettings
@@ -57,19 +47,15 @@ struct FBoatSpawningSettings
 	
 	/** The maximum number of boats per path per wave(index is wave number), if this is <= 0, then there is no maximum */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "!bUseCurveForMaxBoatsPerPath", EditConditionHides))
-	TArray<int32> MaxBoatsPerPath;
+	TArray<FVector2D> MaxBoatsPerPath;
 
 	/** A curve of the max number of boats per path to wave number, <= 0 will be regarded as no maximum */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "bUseCurveForMaxBoatsPerPath", EditConditionHides))
-	TObjectPtr<UCurveFloat> MaxBoatsPerPathCurve = nullptr;
+	FCurveTableRowHandle StartOfRoundMaxBoatsPerPathCurve;
 
-	/** The spawning mode to be used when spawning boats
-	 * Period - Spawns boats within a given period(delay between spawns)
-	 * MaxPerWave - Spawns boats throughout the round based on a maximum number of boats to be spawned
-	 * None - Disabled spawning
-	 */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
-	EBoatSpawningMode BoatSpawningMode = EBoatSpawningMode::None;
+	/** A curve of the max number of boats per path to wave number, <= 0 will be regarded as no maximum */
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "bUseCurveForMaxBoatsPerPath", EditConditionHides))
+	FCurveTableRowHandle EndOfRoundMaxBoatsPerPathCurve;
 
 	/** Should a curve or the array be used to find the number of boats to spawn this wave
 	 * TRUE - Curve will be used
@@ -78,13 +64,17 @@ struct FBoatSpawningSettings
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
 	bool bUseCurveForBoatSpawnAmount = false;
 
-	/** A curve of period of boat spawning(duration between spawns) to wave number */
+	/** A curve of period of boat spawning(duration between spawns X: Start of Round, Y: End of Round) to wave number */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "!bUseCurveForBoatSpawnAmount", EditConditionHides))
-	TArray<int32> BoatSpawnArray;
+	TArray<FVector2D> MaxBoatSpawns;
 
 	/** A curve of period of boat spawning(duration between spawns) to wave number */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "bUseCurveForBoatSpawnAmount", EditConditionHides))
-	TObjectPtr<UCurveFloat> BoatSpawnCurve;
+	FCurveTableRowHandle StartOfRoundBoatSpawnCurve;
+
+	/** A curve of period of boat spawning(duration between spawns) to wave number */
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "bUseCurveForBoatSpawnAmount", EditConditionHides))
+	FCurveTableRowHandle EndOfRoundBoatSpawnCurve;
 };
 
 USTRUCT(BlueprintType)
@@ -111,7 +101,7 @@ struct FMonsterSpawningSettings
 	TArray<float> MonsterSpawnPeriods;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseCurveForMonsterSpawnPeriod", EditConditionHides))
-	TObjectPtr<UCurveFloat> MonsterSpawnCurve;
+	FCurveTableRowHandle MonsterSpawnCurve;
 
 	/** Should a curve or the array be used to find the max numbers of monsters spawned on a given path
 	 * TRUE - Curve will be used
@@ -133,7 +123,7 @@ struct FMonsterSpawningSettings
 
 	/** A curve containing the max number of monsters on a path for a given wave */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseCurveForMaxMonstersOnPath && !bUseBoatsAsForMaxMonsterOnPath", EditConditionHides))
-	TObjectPtr<UCurveFloat> MaxMonstersOnPathCurve;
+	FCurveTableRowHandle MaxMonstersOnPathCurve;
 
 	/** The maximum radius for offsetting the monster spawn location (make them look a bit more realistic) */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
@@ -221,6 +211,9 @@ private:
 	bool IsAtMaxBoats();
 
 	int32 GetMaxAllowedMonstersOnPath(AActor* Path);
+
+	float GetRoundTimeElapsed();
+	float GetPercentRoundTimeElapsed();
 
 	/** Will grab a random free path and put in the OutPath variable(can fail) */
 	bool IsAnyPathFree(int32 MaxBoatsPerPath, AActor*& OutPath);

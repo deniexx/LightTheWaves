@@ -23,9 +23,9 @@ class LIGHTTHEWAVES_API ICBLightInteractor
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 
-	UFUNCTION(BlueprintNativeEvent, Category = "LightInteractor")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "LightInteractor")
 	void OnLightFocused(UPrimitiveComponent* TargetComponent);
 
-	UFUNCTION(BlueprintNativeEvent, Category = "LightInteractor")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "LightInteractor")
 	void OnLightFocusEnd();
 };

@@ -32,7 +32,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<USceneComponent> SceneRootComponent;
 	
-	UPROPERTY(VisibleAnywhere, Category = "Component")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Component")
 	TObjectPtr<UStaticMeshComponent> Lever;
 
 	UPROPERTY(VisibleAnywhere, Category = "Component")

@@ -4,7 +4,6 @@
 #include "Actor/CBPhysicalLever.h"
 
 #include "Components/BoxComponent.h"
-#include "LightTheWaves/LightTheWaves.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "PhysicsEngine/PhysicsThrusterComponent.h"
 
@@ -41,13 +40,8 @@ ACBPhysicalLever::ACBPhysicalLever()
 	PhysicsConstraintComponent->SetAngularSwing2Limit(ACM_Limited, 45.f);
 	PhysicsConstraintComponent->SetAngularTwistLimit(ACM_Locked, 0.f);
 	PhysicsConstraintComponent->SetDisableCollision(true);
-	Lever->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	Lever->SetCollisionResponseToAllChannels(ECR_Ignore);
-	Lever->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	Lever->SetCollisionResponseToChannel(ECC_3DWidget, ECR_Ignore);
-	Lever->SetSimulatePhysics(true);
-	Body->SetCollisionResponseToAllChannels(ECR_Ignore);
-	Body->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	Lever->SetCollisionProfileName(FName("BlockAllDynamic"));
+	Body->SetCollisionProfileName(FName("BlockAllDynamic"));
 	PhysicsThrusterComponent->ThrustStrength = -1500.f;
 	PhysicsThrusterComponent->bAutoActivate = true;
 #pragma endregion
@@ -68,6 +62,7 @@ void ACBPhysicalLever::BeginPlay()
 {
 	Super::BeginPlay();
 
+	Lever->SetSimulatePhysics(true);
 	ActivationBox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnActivationBeginOverlap);
 }
 

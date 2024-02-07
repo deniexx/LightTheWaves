@@ -11,6 +11,8 @@
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "Components/BoxComponent.h"
+#include "Interface/CBHookOverlapInteractor.h"
 #include "LightTheWaves/LightTheWaves.h"
 
 // Sets default values
@@ -36,6 +38,7 @@ ACBPawn::ACBPawn()
 	PhysicsConstraintRight = CreateDefaultSubobject<UPhysicsConstraintComponent>(FName("PhysicsConstraintRight"));
 	HandRight = CreateDefaultSubobject<UStaticMeshComponent>(FName("HandRight"));
 	MotionControllerRightAim = CreateDefaultSubobject<UMotionControllerComponent>(FName("MotionControllerRightAim"));
+	RightHandOverlapBox = CreateDefaultSubobject<UBoxComponent>(FName("RightHandOverlapBox"));
 #pragma endregion
 
 #pragma region Attachments
@@ -58,6 +61,7 @@ ACBPawn::ACBPawn()
 	HandRight->SetupAttachment(MotionControllerRight);
 	PivotRight->SetupAttachment(MotionControllerRight);
 	PhysicsConstraintRight->SetupAttachment(PivotRight);
+	RightHandOverlapBox->SetupAttachment(HandRight);
 #pragma endregion
 
 #pragma region Default Values
@@ -127,6 +131,9 @@ ACBPawn::ACBPawn()
 	MotionControllerRightAim->SetTrackingMotionSource(FName("RightAim"));
 	MotionControllerRight->SetAssociatedPlayerIndex(0);
 	PivotRight->SetHiddenInGame(true);
+
+	RightHandOverlapBox->SetRelativeLocation(FVector(20.f, 0.f, -3.f));
+	RightHandOverlapBox->SetBoxExtent(FVector(4.f, 1.f, 2.f));
 	
 	/** These settings are required to have propertly physical-interacting hands */
 	HandRight->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -151,6 +158,9 @@ void ACBPawn::BeginPlay()
 	PhysicsConstraintRight->SetConstrainedComponents(PivotRight, FName(""), HandRight, FName(""));
 	HandRight->SetSimulatePhysics(true);
 	HandCannon->SetSimulatePhysics(true);
+
+	RightHandOverlapBox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::HookHandBeginOverlap);
+	RightHandOverlapBox->OnComponentEndOverlap.AddDynamic(this, &ThisClass::HookHandEndOverlap);
 	
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
@@ -184,6 +194,24 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	{
 		EnhancedInputComponent->BindAction(ShootInputAction, ETriggerEvent::Started, this, &ThisClass::Shoot);
 	}
+}
+
+void ACBPawn::HookHandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp,
+	int OtherBodyIndex, bool bFromSweep, const FHitResult& HitResult)
+{
+	if (Other->Implements<UCBHookOverlapInteractor>())
+	{
+	    ICBHookOverlapInteractor::Execute_OnHookOverlapBegin(Other);
+	}
+}
+
+void ACBPawn::HookHandEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp, int OtherBodyIndex)
+
+{
+	if (Other->Implements<UCBHookOverlapInteractor>())
+    {
+		ICBHookOverlapInteractor::Execute_OnHookOverlapEnd(Other);
+    }	
 }
 
 void ACBPawn::Shoot()

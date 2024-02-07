@@ -68,11 +68,6 @@ void ACBGameMode::RegisterPathingActorWithPath_Implementation(AActor* ActorToReg
 
 void ACBGameMode::ProcessBoatSpawning()
 {
-	if (BoatSpawningSettings.BoatSpawningMode == EBoatSpawningMode::None)
-	{
-		return;
-	}
-
 	const float BoatSpawnPeriod = GetBoatSpawnPeriod() + FMath::FRandRange(BoatSpawningSettings.MinTimeVariation, BoatSpawningSettings.MaxTimeVariation);
 	GetWorldTimerManager().SetTimer(BoatSpawnTimerHandle, this, &ThisClass::SpawnBoat_TimerElapsed, BoatSpawnPeriod, false);
 }
@@ -94,7 +89,7 @@ void ACBGameMode::ProcessMonsterSpawning()
 
 	if (MonsterSpawningSettings.bUseCurveForMonsterSpawnPeriod && WaveNumberToSwitchToFormula >= WaveNumber)
 	{
-		MonsterSpawnPeriod = MonsterSpawningSettings.MonsterSpawnCurve->GetFloatValue(WaveNumber);
+		MonsterSpawnPeriod = MonsterSpawningSettings.MonsterSpawnCurve.Eval(GetPercentRoundTimeElapsed(), "");
 	}
 	else if (!MonsterSpawningSettings.bUseCurveForMonsterSpawnPeriod && MonsterSpawningSettings.MonsterSpawnPeriods.Num() >= WaveNumber)
 	{
@@ -176,26 +171,26 @@ void ACBGameMode::SpawnMonster(UEnvQueryInstanceBlueprintWrapper* QueryInstance,
 float ACBGameMode::GetBoatSpawnPeriod()
 {
 	float BoatSpawnPeriod;
-	
 	if (BoatSpawningSettings.bUseCurveForBoatSpawnAmount && WaveNumberToSwitchToFormula >= WaveNumber)
 	{
-		BoatSpawnPeriod = BoatSpawningSettings.BoatSpawnCurve->GetFloatValue(WaveNumber);
+		const float Start = BoatSpawningSettings.StartOfRoundBoatSpawnCurve.Eval(WaveNumber, "");
+		const float End = BoatSpawningSettings.EndOfRoundBoatSpawnCurve.Eval(WaveNumber, "");
+		BoatSpawnPeriod = FMath::Lerp(Start, End, GetPercentRoundTimeElapsed());
 	}
-	else if (!BoatSpawningSettings.bUseCurveForBoatSpawnAmount && BoatSpawningSettings.BoatSpawnArray.Num() >= WaveNumber)
+	else if (!BoatSpawningSettings.bUseCurveForBoatSpawnAmount && BoatSpawningSettings.MaxBoatSpawns.Num() >= WaveNumber)
 	{
-		BoatSpawnPeriod = BoatSpawningSettings.BoatSpawnArray[WaveNumber - 1];
+		const float Start = BoatSpawningSettings.MaxBoatSpawns[WaveNumber - 1].X;
+		const float End = BoatSpawningSettings.MaxBoatSpawns[WaveNumber - 1].Y;
+		BoatSpawnPeriod = FMath::Lerp(Start, End, GetPercentRoundTimeElapsed());
 	}
 	else
 	{
-		BoatSpawnPeriod = BOAT_SPAWN_FORMULA(WaveNumber);
+		const float Start = BoatSpawningSettings.MaxBoatSpawns.Last().X;
+		const float End = BoatSpawningSettings.MaxBoatSpawns.Last().Y;
+		BoatSpawnPeriod = BOAT_SPAWN_FORMULA(FMath::Lerp(Start, End, GetPercentRoundTimeElapsed()));
 	}
 	
-	if (BoatSpawningSettings.BoatSpawningMode == EBoatSpawningMode::Period)
-	{
-		return BoatSpawnPeriod;
-	}
-	
-	return BoatSpawnPeriod / WaveDuration;
+	return BoatSpawnPeriod;
 }
 
 void ACBGameMode::SpawnBoat(AActor* PathActor)
@@ -212,15 +207,21 @@ bool ACBGameMode::TrySpawnBoat()
 	float MaxBoatsPerPath;
 	if (BoatSpawningSettings.bUseCurveForMaxBoatsPerPath && WaveNumberToSwitchToFormula >= WaveNumber)
 	{
-		MaxBoatsPerPath = BoatSpawningSettings.MaxBoatsPerPathCurve->GetFloatValue(WaveNumber);
+		const float Start = BoatSpawningSettings.StartOfRoundMaxBoatsPerPathCurve.Eval(WaveNumber, "");
+		const float End = BoatSpawningSettings.EndOfRoundMaxBoatsPerPathCurve.Eval(WaveNumber, "");
+		MaxBoatsPerPath = FMath::Lerp(Start, End, GetPercentRoundTimeElapsed());
 	}
 	else if (!BoatSpawningSettings.bUseCurveForMaxBoatsPerPath && BoatSpawningSettings.MaxBoatsPerPath.Num() >= WaveNumber)
 	{
-		MaxBoatsPerPath = BoatSpawningSettings.MaxBoatsPerPath[WaveNumber - 1];
+		const float Start = BoatSpawningSettings.MaxBoatsPerPath[WaveNumber - 1].X;
+		const float End = BoatSpawningSettings.MaxBoatsPerPath[WaveNumber - 1].Y;
+		MaxBoatsPerPath = FMath::Lerp(Start, End, GetPercentRoundTimeElapsed());
 	}
 	else
 	{
-		MaxBoatsPerPath = MAX_BOATS_PER_PATH_FORMULA(WaveNumber);
+		const float Start = BoatSpawningSettings.MaxBoatsPerPath.Last().X;
+		const float End = BoatSpawningSettings.MaxBoatsPerPath.Last().Y;
+		MaxBoatsPerPath = BOAT_SPAWN_FORMULA(FMath::Lerp(Start, End, GetPercentRoundTimeElapsed()));
 	}
 
 	AActor* FreePathActor = nullptr;
@@ -268,7 +269,7 @@ int32 ACBGameMode::GetMaxAllowedMonstersOnPath(AActor* Path)
 
 	if (MonsterSpawningSettings.bUseCurveForMaxMonstersOnPath)
 	{
-		return MonsterSpawningSettings.MaxMonstersOnPathCurve->GetFloatValue(WaveNumber);
+		return MonsterSpawningSettings.MaxMonstersOnPathCurve.Eval(GetPercentRoundTimeElapsed(), "");
 	}
 
 	if (WaveNumber >= MonsterSpawningSettings.MaxMonstersOnPath.Num())
@@ -277,6 +278,16 @@ int32 ACBGameMode::GetMaxAllowedMonstersOnPath(AActor* Path)
 	}
 
 	return MonsterSpawningSettings.MaxMonstersOnPath[WaveNumber - 1];
+}
+
+float ACBGameMode::GetRoundTimeElapsed()
+{
+	return 1.f;
+}
+
+float ACBGameMode::GetPercentRoundTimeElapsed()
+{
+	return 0.f;
 }
 
 bool ACBGameMode::IsAnyPathFree(int32 MaxBoatsPerPath, AActor*& OutPath)
