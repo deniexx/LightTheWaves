@@ -13,6 +13,7 @@
 #include "EnhancedInputComponent.h"
 #include "Components/BoxComponent.h"
 #include "Interface/CBHookOverlapInteractor.h"
+#include "Interface/CBPlayerInterface.h"
 #include "LightTheWaves/LightTheWaves.h"
 
 // Sets default values
@@ -146,11 +147,22 @@ ACBPawn::ACBPawn()
 	
 }
 
+void ACBPawn::IncreaseCapacity_Implementation(int32 IncreaseAmount)
+{
+	AmmoCapacity += IncreaseAmount;
+}
+
+bool ACBPawn::CanReload_Implementation()
+{
+	return Ammo < AmmoCapacity;
+}
+
 // Called when the game starts or when spawned
 void ACBPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
+	Ammo = AmmoCapacity;
 	/** @NOTE: I'm not sure if it's needed to call these here, but there is no real issue in doing that, so might as well leave them */
 	PhysicsConstraintRight->SetConstraintReferenceFrame(EConstraintFrame::Frame1, PivotRight->GetComponentTransform());
 	PhysicsConstraintRight->SetConstraintReferenceFrame(EConstraintFrame::Frame2, HandRight->GetComponentTransform());
@@ -196,8 +208,13 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	}
 }
 
+void ACBPawn::Reload_Implementation()
+{
+	Ammo = AmmoCapacity;
+}
+
 void ACBPawn::HookHandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp,
-	int OtherBodyIndex, bool bFromSweep, const FHitResult& HitResult)
+                                   int OtherBodyIndex, bool bFromSweep, const FHitResult& HitResult)
 {
 	if (Other->Implements<UCBHookOverlapInteractor>())
 	{
@@ -217,5 +234,11 @@ void ACBPawn::HookHandEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 void ACBPawn::Shoot()
 {
 	/** This can be improved, but it's okay for debugging(adding things like aim assist) */
-	GetWorld()->SpawnActor<AActor>(ProjectileClass, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator());
+	if (Ammo > 0)
+	{
+		UE_LOG(CBLog, Warning, TEXT("Shooting!"));
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		GetWorld()->SpawnActor<AActor>(ProjectileClass, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator(), SpawnParameters);
+	}
 }

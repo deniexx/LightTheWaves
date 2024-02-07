@@ -60,6 +60,7 @@ Build/*
 .vsconfig/
 .vscode/
 
+Config/DefaultEngine.ini
 .vsconfig
 
 # Whitelist PakBlacklist-<BuildConfiguration>.txt files
@@ -82,3 +83,5 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+Config/DefaultEngine.ini
+Config/DefaultEngine.ini
