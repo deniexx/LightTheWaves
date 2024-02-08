@@ -150,6 +150,7 @@ void ACBGameMode::SpawnMonster(UEnvQueryInstanceBlueprintWrapper* QueryInstance,
 			ProcessMonsterSpawning();
 			return;
 		}
+		
 
 		const float MonstersOnChosenPath = ICBPath::Execute_GetNumberOfMonstersOnPath(SplineActor);
 		if (MonstersOnChosenPath >= GetMaxAllowedMonstersOnPath(SplineActor))

@@ -176,7 +176,8 @@ void ACBPawn::BeginPlay()
 	
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
-		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Stage);
+		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
+		UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0, EOrientPositionSelector::OrientationAndPosition);
 		UKismetSystemLibrary::ExecuteConsoleCommand(this, "vr.PixelDensity 1.0");
 
 		if (const APlayerController* PlayerController = GetController<APlayerController>())
@@ -218,7 +219,7 @@ void ACBPawn::HookHandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 {
 	if (Other->Implements<UCBHookOverlapInteractor>())
 	{
-	    ICBHookOverlapInteractor::Execute_OnHookOverlapBegin(Other);
+	    ICBHookOverlapInteractor::Execute_OnHookOverlapBegin(Other, RightHandOverlapBox);
 	}
 }
 
@@ -227,7 +228,7 @@ void ACBPawn::HookHandEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 {
 	if (Other->Implements<UCBHookOverlapInteractor>())
     {
-		ICBHookOverlapInteractor::Execute_OnHookOverlapEnd(Other);
+		ICBHookOverlapInteractor::Execute_OnHookOverlapEnd(Other, RightHandOverlapBox);
     }	
 }
 

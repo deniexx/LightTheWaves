@@ -24,8 +24,8 @@ class LIGHTTHEWAVES_API ICBHookOverlapInteractor
 public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "HookOverlapInteractor")
-	void OnHookOverlapBegin();
+	void OnHookOverlapBegin(UPrimitiveComponent* OverlapComponent);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "HookOverlapInteractor")
-	void OnHookOverlapEnd();
+	void OnHookOverlapEnd(UPrimitiveComponent* OverlapComponent);
 };
