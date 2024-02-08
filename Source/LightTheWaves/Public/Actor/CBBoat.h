@@ -98,6 +98,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float MaxDistanceToPathAllowed = 50.f;
 
+	/** How much further forward should the actor choose a point on the path, when returning to it
+	 * 0 means it will make as straight of a line as possible to the nearest point on the spline, not make any horizontal progress along it
+	 * > 0 means that the boat will still in a sense continue moving forward, but also towards the spline at the same time
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float ReturnToPathForwardLook = 150.f;
+
+	/** How fast does this actor rotation in the direction of which it is moving */
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float RotationRate = 150.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TSubclassOf<AActor> DebrisLeftAfterDestruction;
 
@@ -117,14 +128,18 @@ private:
 	UPROPERTY()
 	TObjectPtr<USplineComponent> CurrentPath;
 
+	FVector MovementDirection;
+
 	void FollowLight(float DeltaTime);
 	void FollowPath(float DeltaTime);
 	void ReturnToPath(float DeltaTime);
 
+	void OrientRotationToMovement(float DeltaTime);
+
 	UFUNCTION(BlueprintCallable)
 	void LeaveDebris(const FVector& Location);
 
-	void DrawBoatDebugPathing(const FVector& Direction);
+	void DrawBoatDebugPathing();
 	
 	EBoatPathingState EvaluateStatePostFollowLight();
 	
