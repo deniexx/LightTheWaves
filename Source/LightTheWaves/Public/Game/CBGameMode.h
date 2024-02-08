@@ -7,6 +7,7 @@
 #include "EnvironmentQuery/EnvQueryInstanceBlueprintWrapper.h"
 #include "Interface/CBPathProvider.h"
 #include "GameFramework/GameModeBase.h"
+#include "Interface/CBWaveDirector.h"
 #include "CBGameMode.generated.h"
 
 class UEnvQuery;
@@ -23,19 +24,19 @@ struct FBoatSpawningSettings
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
 	TArray<int32> MaxBoats;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (Units = "s"))
 	float MinimumDistanceFromPathStart = 300.f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (Units = "s"))
 	float MinTimeVariation = -0.5f;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (Units = "s"))
 	float MaxTimeVariation = 3.f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (Units = "cm"))
 	float MinDistanceVariation = -100.f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (Units = "cm"))
 	float MaxDistanceVariation = 100.f;
 	
 	/** Should a curve or the array be used to find the maximum number of boats per path
@@ -83,11 +84,11 @@ struct FMonsterSpawningSettings
 	GENERATED_BODY()
 
 	/** The minimum value to be used for the spawn period randomization */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (Units = "s"))
 	float MinTimeVariation = -0.5f;
 
 	/** The maximum value to be used for the spawn period randomization */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (Units = "s"))
 	float MaxTimeVariation = 3.f;
 
 	/** Should a curve or the array be used to find the monster spawning period
@@ -134,7 +135,7 @@ struct FMonsterSpawningSettings
 	int32 AdditionalMaxMonstersPerPath = 1;
 
 	/** The minimum distance from the path starting point where monsters can spawn */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (Units = "cm"))
 	float MinimumDistanceFromPathStart = 1000.f;
 
 	/** The monster class to be spawned (can be changed to an array if we decide to have multiple monsters) */
@@ -142,12 +143,27 @@ struct FMonsterSpawningSettings
 	TSubclassOf<AActor> MonsterClass;
 };
 
+USTRUCT(BlueprintType)
+struct FBossSpawningSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
+	TSubclassOf<AActor> BossActorClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
+	float BossSpawnTimePeriodMin = 180.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
+	float BossSpawnTimePeriodMax = 240.f;
+};
+
 class USplineComponent;
 /**
  * 
  */
 UCLASS()
-class LIGHTTHEWAVES_API ACBGameMode : public AGameModeBase, public ICBPathProvider
+class LIGHTTHEWAVES_API ACBGameMode : public AGameModeBase, public ICBPathProvider, public ICBWaveDirector
 {
 	GENERATED_BODY()
 
@@ -158,6 +174,11 @@ public:
 	virtual USplineComponent* GetClosestPath_Implementation(AActor* ReferenceActor) override;
 	virtual void RegisterPathingActorWithPath_Implementation(AActor* ActorToRegister, USplineComponent* TargetPath) override;
 	/** End Path Provider Interface */
+
+	/** Wave Director Interface */
+	virtual void StartWaveGameplay_Implementation() override;
+	virtual FOnActivityStateUpdated& OnActivityStateUpdatedEvent() override;
+	/** End Wave Director Interface */
 	
 protected:
 
@@ -175,9 +196,23 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	TObjectPtr<UEnvQuery> MonsterSpawnQuery;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
+	FBossSpawningSettings BossSpawningSettings;
+
 	/** The wave number to switch to using formula for spawn settings */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
 	int32 WaveNumberToSwitchToFormula = 999;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Waves", meta = (Units = "s"))
+	float WaveDuration = 300.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Waves", meta = (Units = "s"))
+	float RecessPeriodDuration = 30.f;
+
+	UPROPERTY(BlueprintAssignable, Category = "Activity")
+	FOnActivityStateUpdated OnActivityStateUpdated;
+
+	int32 WaveNumber = 0;
 
 	UPROPERTY()
 	TArray<AActor*> PathActors;
@@ -187,18 +222,15 @@ protected:
 
 	UPROPERTY()
 	FTimerHandle MonsterSpawnTimerHandle;
-	
-	UFUNCTION()
-	void SpawnBoat_TimerElapsed();
 
-	UFUNCTION()
-	void SpawnMonster(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus);
+	UPROPERTY()
+	FTimerHandle BossSpawnTimerHandle;
 
-	/** DUMMY VARIABLE */
-	int32 WaveNumber = 1;
+	UPROPERTY()
+	FTimerHandle WaveTimerHandle;
 
-	/** DUMMY VARIABLE */
-	float WaveDuration = 5.f;
+	UPROPERTY()
+	FTimerHandle RecessTimerHandle;
 
 private:
 	
@@ -206,14 +238,33 @@ private:
 	void SpawnBoat(AActor* PathActor);
 	void ProcessBoatSpawning();
 	void ProcessMonsterSpawning();
+	void SpawnBoss();
+	void ProcessBossSpawning();
 	void RunMonsterSpawnEQS();
 	bool TrySpawnBoat();
 	bool IsAtMaxBoats();
+	
+	void StartNewWave(EGameActivity PreviousActivity = EGameActivity::None);
 
 	int32 GetMaxAllowedMonstersOnPath(AActor* Path);
 
-	float GetRoundTimeElapsed();
-	float GetPercentRoundTimeElapsed();
+	float GetRoundTimeElapsed() const;
+	float GetPercentRoundTimeElapsed() const;
+
+	UFUNCTION()
+	void SpawnBoat_TimerElapsed();
+
+	UFUNCTION()
+	void SpawnMonster(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus);
+
+	UFUNCTION()
+	void RecessTimer_Elapsed();
+	
+	UFUNCTION()
+	void WaveTimer_Elapsed();
+	
+	UFUNCTION()
+	void OnBossKilled(AActor* DestroyedActor);
 
 	/** Will grab a random free path and put in the OutPath variable(can fail) */
 	bool IsAnyPathFree(int32 MaxBoatsPerPath, AActor*& OutPath);

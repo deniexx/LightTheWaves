@@ -24,14 +24,16 @@ static TAutoConsoleVariable<int32> CVarDrawDebugMonsterSpawn(
 	ECVF_Cheat
 );
 
+FOnActivityStateUpdated& ACBGameMode::OnActivityStateUpdatedEvent()
+{
+	return OnActivityStateUpdated;
+}
+
 void ACBGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	
 	UGameplayStatics::GetAllActorsWithTag(this, FName("Path"), PathActors);
-
-	ProcessBoatSpawning();
-	ProcessMonsterSpawning();
 }
 
 USplineComponent* ACBGameMode::GetRandomPath_Implementation()
@@ -64,6 +66,16 @@ void ACBGameMode::RegisterPathingActorWithPath_Implementation(AActor* ActorToReg
 			return;
 		}
 	}
+}
+
+void ACBGameMode::StartWaveGameplay_Implementation()
+{
+	if (WaveTimerHandle.IsValid())
+	{
+		return;
+	}
+	
+	StartNewWave();
 }
 
 void ACBGameMode::ProcessBoatSpawning()
@@ -261,6 +273,86 @@ bool ACBGameMode::IsAtMaxBoats()
 	return Boats > MaxBoatsAllowed;
 }
 
+void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
+{
+	//++WaveNumber;
+	WaveNumber = 1;
+	GetWorldTimerManager().SetTimer(WaveTimerHandle, this, &ThisClass::WaveTimer_Elapsed, WaveDuration, false);
+
+	FActivityStateUpdatedData Data;
+	Data.OldActivity = PreviousActivity;
+	Data.NewActivity = EGameActivity::Wave;
+	Data.ActivityFinishedState = EActivityFinishedState::Successful;
+	OnActivityStateUpdated.Broadcast(Data);
+	
+	ProcessBoatSpawning();
+	ProcessMonsterSpawning();
+	ProcessBossSpawning();
+}
+
+void ACBGameMode::WaveTimer_Elapsed()
+{
+	/* @TODO: Track if the player is still in combat with the boss, do not start the recess period until the fight is over
+	 * @TODO: or "kill" the boss ourselves
+	 */
+	
+	GetWorldTimerManager().ClearTimer(BoatSpawnTimerHandle);
+	GetWorldTimerManager().ClearTimer(MonsterSpawnTimerHandle);
+	GetWorldTimerManager().ClearTimer(BossSpawnTimerHandle);
+	WaveTimerHandle.Invalidate();
+
+	FActivityStateUpdatedData Data;
+	Data.OldActivity = EGameActivity::Wave;
+	Data.NewActivity = EGameActivity::Recess;
+	Data.ActivityFinishedState = EActivityFinishedState::Successful;
+	OnActivityStateUpdated.Broadcast(Data);
+	
+	GetWorldTimerManager().SetTimer(RecessTimerHandle, this, &ThisClass::RecessTimer_Elapsed, RecessPeriodDuration, false);
+}
+
+void ACBGameMode::RecessTimer_Elapsed()
+{
+	RecessTimerHandle.Invalidate();
+	//StartNewWave();
+	
+	// @TODO: Add a finish screen for the demo
+}
+
+void ACBGameMode::ProcessBossSpawning()
+{
+	const float BossSpawnDelay = FMath::FRandRange(BossSpawningSettings.BossSpawnTimePeriodMin, BossSpawningSettings.BossSpawnTimePeriodMax);
+	GetWorldTimerManager().SetTimer(BossSpawnTimerHandle, this, &ThisClass::SpawnBoss, BossSpawnDelay, false);
+}
+
+void ACBGameMode::SpawnBoss()
+{
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	// @TODO: Figure out a way to know where the boss should spawn, probably a variable on the spawn settings
+	const FVector SpawnLocation = FVector(-304.0, 4400.0, 2200.0);
+	AActor* BossActor = GetWorld()->SpawnActor<AActor>(BossSpawningSettings.BossActorClass, SpawnLocation, FRotator::ZeroRotator, SpawnParameters);
+
+	FActivityStateUpdatedData Data;
+	Data.OldActivity = EGameActivity::Wave;
+	Data.NewActivity = EGameActivity::Boss;
+	Data.ActivityFinishedState = EActivityFinishedState::Ongoing;
+	OnActivityStateUpdated.Broadcast(Data);
+
+	BossActor->OnDestroyed.AddDynamic(this, &ThisClass::OnBossKilled);
+}
+
+void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
+{
+	// @TODO: Advance game and whatever else needs to be done
+	FActivityStateUpdatedData Data;
+	Data.ActivityFinishedState = EActivityFinishedState::Successful;
+	Data.OldActivity = EGameActivity::Boss;
+	Data.NewActivity = EGameActivity::Wave;
+	OnActivityStateUpdated.Broadcast(Data);
+
+	UE_LOG(CBLog, Log, TEXT("Boss Defeated!"));
+}
+
 int32 ACBGameMode::GetMaxAllowedMonstersOnPath(AActor* Path)
 {
 	if (MonsterSpawningSettings.bUseBoatsAsForMaxMonsterOnPath)
@@ -281,13 +373,23 @@ int32 ACBGameMode::GetMaxAllowedMonstersOnPath(AActor* Path)
 	return MonsterSpawningSettings.MaxMonstersOnPath[WaveNumber - 1];
 }
 
-float ACBGameMode::GetRoundTimeElapsed()
+float ACBGameMode::GetRoundTimeElapsed() const
 {
-	return 1.f;
+	if (WaveTimerHandle.IsValid())
+	{
+		return GetWorldTimerManager().GetTimerElapsed(WaveTimerHandle);	
+	}
+
+	return 0.f;
 }
 
-float ACBGameMode::GetPercentRoundTimeElapsed()
+float ACBGameMode::GetPercentRoundTimeElapsed() const
 {
+	if (WaveTimerHandle.IsValid())
+	{
+		return GetRoundTimeElapsed() / WaveDuration;
+	}
+
 	return 0.f;
 }
 
