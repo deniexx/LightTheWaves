@@ -241,5 +241,6 @@ void ACBPawn::Shoot()
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		GetWorld()->SpawnActor<AActor>(ProjectileClass, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator(), SpawnParameters);
+		Ammo--;
 	}
 }
