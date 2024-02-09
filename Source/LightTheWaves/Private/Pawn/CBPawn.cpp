@@ -13,7 +13,6 @@
 #include "EnhancedInputComponent.h"
 #include "Components/BoxComponent.h"
 #include "Interface/CBHookOverlapInteractor.h"
-#include "Interface/CBPlayerInterface.h"
 #include "LightTheWaves/LightTheWaves.h"
 
 // Sets default values
@@ -176,7 +175,7 @@ void ACBPawn::BeginPlay()
 	
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
-		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
+		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Stage);
 		UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0, EOrientPositionSelector::OrientationAndPosition);
 		UKismetSystemLibrary::ExecuteConsoleCommand(this, "vr.PixelDensity 1.0");
 

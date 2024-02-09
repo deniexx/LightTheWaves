@@ -36,6 +36,11 @@ void ACBGameMode::BeginPlay()
 	UGameplayStatics::GetAllActorsWithTag(this, FName("Path"), PathActors);
 }
 
+void ACBGameMode::TestGameplay()
+{
+	StartNewWave();
+}
+
 USplineComponent* ACBGameMode::GetRandomPath_Implementation()
 {
 	USplineComponent* Spline = nullptr;
@@ -329,7 +334,7 @@ void ACBGameMode::SpawnBoss()
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	// @TODO: Figure out a way to know where the boss should spawn, probably a variable on the spawn settings
-	const FVector SpawnLocation = FVector(-304.0, 4400.0, 2200.0);
+	const FVector SpawnLocation = FVector(-481.000000,13141.000000,3729.000000);
 	AActor* BossActor = GetWorld()->SpawnActor<AActor>(BossSpawningSettings.BossActorClass, SpawnLocation, FRotator::ZeroRotator, SpawnParameters);
 
 	FActivityStateUpdatedData Data;

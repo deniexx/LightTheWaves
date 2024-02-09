@@ -184,6 +184,9 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	UFUNCTION(Exec)
+	void TestGameplay();
+
 	/** The settings that will be used when spawning boats */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
 	FBoatSpawningSettings BoatSpawningSettings;

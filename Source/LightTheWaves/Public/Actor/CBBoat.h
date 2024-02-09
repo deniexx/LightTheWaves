@@ -83,15 +83,15 @@ protected:
 	float MovementSpeed = 50.f;
 
 	/** How much points are rewarded upon reaching the docks */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Boat Properties")
 	float PointsReward = 100.f;
 
 	/** How much currency is rewarded upon reaching the docks */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	UPROPERTY(EditDefaultsOnly,  BlueprintReadOnly, Category = "Boat Properties")
 	float CurrencyReward = 25.f;
 
 	/** How much life is lost when a boat is destroyed */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Boat Properties")
 	float LifeLoss = 10.f;
 
 	/** The maximum distance allowed between the boat and path, without having it correct itself(move back towards the path)*/

@@ -25,10 +25,10 @@ class LIGHTTHEWAVES_API ICBPlayerInterface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 
-	UFUNCTION(BlueprintNativeEvent, Category = "Player Attributes")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Attributes")
 	void ApplyChangeToCurrency(int32 Delta);
 
-	UFUNCTION(BlueprintNativeEvent, Category = "Player Attributes")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Attributes")
 	void ApplyChangeToPoints(int32 Delta);
 
 	virtual FOnAttributeChanged& OnPointsChangedEvent() = 0;
