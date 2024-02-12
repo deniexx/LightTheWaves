@@ -148,12 +148,15 @@ struct FBossSpawningSettings
 {
 	GENERATED_BODY()
 
+	/** The actor class to be used to spawn the boss */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
 	TSubclassOf<AActor> BossActorClass;
 
+	/** The minimum time elapsed during the wave, for the boss to be spawned */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
 	float BossSpawnTimePeriodMin = 180.f;
 
+	/** The maximum time elapsed during the wave, for the boss to be spawned */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
 	float BossSpawnTimePeriodMax = 240.f;
 };
@@ -184,6 +187,7 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	/** Starts the gameplay loop */
 	UFUNCTION(Exec)
 	void TestGameplay();
 
@@ -205,13 +209,15 @@ protected:
 	/** The wave number to switch to using formula for spawn settings */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
 	int32 WaveNumberToSwitchToFormula = 999;
-	
+
+	/** How long should a wave last for? */
 	UPROPERTY(EditDefaultsOnly, Category = "Waves", meta = (Units = "s"))
 	float WaveDuration = 300.f;
 
+	/** How long should the recess period last for? */
 	UPROPERTY(EditDefaultsOnly, Category = "Waves", meta = (Units = "s"))
 	float RecessPeriodDuration = 30.f;
-
+	
 	UPROPERTY(BlueprintAssignable, Category = "Activity")
 	FOnActivityStateUpdated OnActivityStateUpdated;
 

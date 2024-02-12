@@ -30,6 +30,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> MonsterMesh;
 
+	/** How long should the monster stay on the field */
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	float LifeSpan = 60.f;
 	

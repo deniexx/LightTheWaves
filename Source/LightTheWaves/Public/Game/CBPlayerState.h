@@ -23,15 +23,14 @@ public:
 	virtual FOnAttributeChanged& OnCurrencyChangedEvent() override;
 	virtual FOnAttributeChanged& OnPointsChangedEvent() override;
 	/** End Player Interface */
+	
+protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnAttributeChanged OnCurrencyChanged;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnAttributeChanged OnPointsChanged;
-	
-	
-protected:
 
 	UPROPERTY()
 	int32 Currency = 0;

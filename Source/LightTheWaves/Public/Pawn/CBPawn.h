@@ -114,6 +114,7 @@ protected:
 	UFUNCTION()
 	virtual void Shoot() override;
 
+	/** The maximum ammo that the gun can carry by default */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	int32 AmmoCapacity = 5;
 

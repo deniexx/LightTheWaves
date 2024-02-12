@@ -41,7 +41,7 @@ public:
 	/** End Light Interactor interface */
 
 	/**Destroyable Object Interface */
-	virtual void OnDestroyed_Implementation(AActor* DestroyedActor) override;
+	virtual void OnDestroyed_Implementation(AActor* InstigatorActor) override;
 	/**End Destroyable Object interface */
 
 #if WITH_EDITORONLY_DATA	
@@ -109,6 +109,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float RotationRate = 150.f;
 
+	/** The debris actor to be spawned when the boat has been destroyed */
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TSubclassOf<AActor> DebrisLeftAfterDestruction;
 

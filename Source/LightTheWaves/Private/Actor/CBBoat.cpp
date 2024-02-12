@@ -193,7 +193,7 @@ void ACBBoat::OnLightFocusEnd_Implementation()
 	CurrentPathingState = EvaluateStatePostFollowLight();
 }
 
-void ACBBoat::OnDestroyed_Implementation(AActor* DestroyedActor)
+void ACBBoat::OnDestroyed_Implementation(AActor* InstigatorActor)
 {
 	LeaveDebris(GetActorLocation());
 	OnPathingActorLeftPath.Broadcast(this);
