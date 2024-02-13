@@ -28,9 +28,11 @@ ACBBoat::ACBBoat()
 
 	SphereTrigger = CreateDefaultSubobject<USphereComponent>(FName("SphereTrigger"));
 	BoatMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("BoatMesh"));
-
+	DebrisSpawnLocation = CreateDefaultSubobject<USceneComponent>(FName("DebrisSpawnLocation"));
+	
 	SetRootComponent(SphereTrigger);
 	BoatMesh->SetupAttachment(GetRootComponent());
+	DebrisSpawnLocation->SetupAttachment(GetRootComponent());
 
 	CurrentPathingState = EBoatPathingState::ReturningToPath;
 }
@@ -39,21 +41,25 @@ ACBBoat::ACBBoat()
 void ACBBoat::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	// @TODO: Handle Rotation of the boat towards movement
+	
 	if (IsFollowingLight())
 	{
 		FollowLight(DeltaTime);
-		return;
 	}
-	if (IsFollowingPath())
+	else if (IsFollowingPath())
 	{
 		FollowPath(DeltaTime);
-		return;
 	}
-	if (IsReturningToPath()) // @NOTE: This could be able to be integrated in follow path? Might not be worth it
+	else if (IsReturningToPath())
 	{
 		ReturnToPath(DeltaTime);
+	}
+
+	OrientRotationToMovement(DeltaTime);
+	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
+	if (bDrawDebug)
+	{
+		DrawBoatDebugPathing();
 	}
 }
 
@@ -66,14 +72,8 @@ void ACBBoat::FollowLight(float DeltaTime)
 		return;
 	}
 	
-	const FVector Direction = (FollowTarget->GetComponentLocation() - GetActorLocation()).GetSafeNormal();
-	AddActorWorldOffset(Direction * MovementSpeed * DeltaTime);
-
-	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
-	if (bDrawDebug)
-	{
-		DrawBoatDebugPathing(Direction);
-	}
+	MovementDirection = (FollowTarget->GetComponentLocation() - GetActorLocation()).GetSafeNormal();
+	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
 }
 
 void ACBBoat::FollowPath(float DeltaTime)
@@ -85,22 +85,19 @@ void ACBBoat::FollowPath(float DeltaTime)
 	}
 
 	const FVector LocationOnSpline = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
-	const FVector Direction = CurrentPath->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
-	AddActorWorldOffset(Direction * MovementSpeed * DeltaTime);
-
-	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
-    if (bDrawDebug)
-    {
-    	DrawBoatDebugPathing(Direction);
-    }
+	MovementDirection = CurrentPath->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
+	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
 }
 
 void ACBBoat::ReturnToPath(float DeltaTime)
 {
 	if (ReturnToPathPoints.Num() <= 0)
 	{
-		UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), FVector(630.f, 260.f, GetActorLocation().Z));
-		if (NavPath)
+		const FVector DirectionOnSpline = CurrentPath->FindDirectionClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
+		const FVector ForwardLookLocation = GetActorLocation() + (DirectionOnSpline * ReturnToPathForwardLook);
+		FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(ForwardLookLocation, ESplineCoordinateSpace::World);
+		ClosestSplinePoint.Z = GetActorLocation().Z;
+		if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), ClosestSplinePoint))
 		{
 			ReturnToPathPoints = MoveTemp(NavPath->PathPoints);
 			PointIndex = 0;
@@ -113,7 +110,7 @@ void ACBBoat::ReturnToPath(float DeltaTime)
 		return;
 	}
 
-	if ((GetActorLocation() - ReturnToPathPoints[PointIndex]).Length() < 3.f)
+	if ((GetActorLocation() - ReturnToPathPoints[PointIndex]).Length() < 1.f)
 	{
 		PointIndex++;
 	}
@@ -127,25 +124,35 @@ void ACBBoat::ReturnToPath(float DeltaTime)
 	}
 
 	const FVector Target =  ReturnToPathPoints[PointIndex];
-	const FVector Direction = (Target - GetActorLocation()).GetSafeNormal();
-	AddActorWorldOffset(Direction * MovementSpeed * DeltaTime);
+	MovementDirection = (Target - GetActorLocation()).GetSafeNormal();
+	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
+}
 
-	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
-	if (bDrawDebug)
+void ACBBoat::OrientRotationToMovement(float DeltaTime)
+{
+	if (MovementDirection.IsNearlyZero())
 	{
-		DrawBoatDebugPathing(Direction);
+		return;
 	}
+
+	const FRotator CurrentRotation = GetActorRotation();
+	const FRotator TargetRotation = MovementDirection.ToOrientationRotator();
+	const FRotator InterpolatedRotation = FMath::RInterpTo(CurrentRotation, TargetRotation, DeltaTime, RotationRate);
+	SetActorRotation(InterpolatedRotation);
 }
 
 void ACBBoat::LeaveDebris(const FVector& Location)
 {
 	// @NOTE: Potentially randomize the rotation of the debris on an axis
-	GetWorld()->SpawnActor<AActor>(DebrisLeftAfterDestruction, Location, FRotator::ZeroRotator);
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Instigator = this;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	GetWorld()->SpawnActor<AActor>(DebrisLeftAfterDestruction, DebrisSpawnLocation->GetComponentLocation(), GetActorRotation(), SpawnParameters);
 }
 
-void ACBBoat::DrawBoatDebugPathing(const FVector& Direction)
+void ACBBoat::DrawBoatDebugPathing()
 {
-	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + (Direction * 100.f), 1, FColor::Red, false, -1, 0, 3);
+	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + (GetActorForwardVector() * 100.f), 1, FColor::Red, false, -1, 0, 3);
 	
 	for (const FVector& Point : ReturnToPathPoints)
 	{
@@ -186,13 +193,18 @@ void ACBBoat::OnLightFocusEnd_Implementation()
 		return;
 	}
 
+	ReturnToPathPoints.Empty();
 	FollowTarget = nullptr;
 	CurrentPathingState = EvaluateStatePostFollowLight();
 }
 
-void ACBBoat::OnDestroyed_Implementation(AActor* DestroyedActor)
+void ACBBoat::OnDestroyed_Implementation(AActor* InstigatorActor, EDestroyingObject DestroyingObject)
 {
-	LeaveDebris(GetActorLocation());
+	if (DestroyingObject != EDestroyingObject::Debris)
+	{
+		LeaveDebris(GetActorLocation());
+	}
+
 	OnPathingActorLeftPath.Broadcast(this);
 	Destroy();
 }

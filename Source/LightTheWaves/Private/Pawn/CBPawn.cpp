@@ -11,6 +11,8 @@
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "Components/BoxComponent.h"
+#include "Interface/CBHookOverlapInteractor.h"
 #include "LightTheWaves/LightTheWaves.h"
 
 // Sets default values
@@ -36,6 +38,7 @@ ACBPawn::ACBPawn()
 	PhysicsConstraintRight = CreateDefaultSubobject<UPhysicsConstraintComponent>(FName("PhysicsConstraintRight"));
 	HandRight = CreateDefaultSubobject<UStaticMeshComponent>(FName("HandRight"));
 	MotionControllerRightAim = CreateDefaultSubobject<UMotionControllerComponent>(FName("MotionControllerRightAim"));
+	RightHandOverlapBox = CreateDefaultSubobject<UBoxComponent>(FName("RightHandOverlapBox"));
 #pragma endregion
 
 #pragma region Attachments
@@ -58,6 +61,7 @@ ACBPawn::ACBPawn()
 	HandRight->SetupAttachment(MotionControllerRight);
 	PivotRight->SetupAttachment(MotionControllerRight);
 	PhysicsConstraintRight->SetupAttachment(PivotRight);
+	RightHandOverlapBox->SetupAttachment(HandRight);
 #pragma endregion
 
 #pragma region Default Values
@@ -127,6 +131,9 @@ ACBPawn::ACBPawn()
 	MotionControllerRightAim->SetTrackingMotionSource(FName("RightAim"));
 	MotionControllerRight->SetAssociatedPlayerIndex(0);
 	PivotRight->SetHiddenInGame(true);
+
+	RightHandOverlapBox->SetRelativeLocation(FVector(20.f, 0.f, -3.f));
+	RightHandOverlapBox->SetBoxExtent(FVector(4.f, 1.f, 2.f));
 	
 	/** These settings are required to have propertly physical-interacting hands */
 	HandRight->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -139,11 +146,22 @@ ACBPawn::ACBPawn()
 	
 }
 
+void ACBPawn::IncreaseCapacity_Implementation(int32 IncreaseAmount)
+{
+	AmmoCapacity += IncreaseAmount;
+}
+
+bool ACBPawn::CanReload_Implementation()
+{
+	return Ammo < AmmoCapacity;
+}
+
 // Called when the game starts or when spawned
 void ACBPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
+	Ammo = AmmoCapacity;
 	/** @NOTE: I'm not sure if it's needed to call these here, but there is no real issue in doing that, so might as well leave them */
 	PhysicsConstraintRight->SetConstraintReferenceFrame(EConstraintFrame::Frame1, PivotRight->GetComponentTransform());
 	PhysicsConstraintRight->SetConstraintReferenceFrame(EConstraintFrame::Frame2, HandRight->GetComponentTransform());
@@ -151,10 +169,14 @@ void ACBPawn::BeginPlay()
 	PhysicsConstraintRight->SetConstrainedComponents(PivotRight, FName(""), HandRight, FName(""));
 	HandRight->SetSimulatePhysics(true);
 	HandCannon->SetSimulatePhysics(true);
+
+	RightHandOverlapBox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::HookHandBeginOverlap);
+	RightHandOverlapBox->OnComponentEndOverlap.AddDynamic(this, &ThisClass::HookHandEndOverlap);
 	
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Stage);
+		UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0, EOrientPositionSelector::OrientationAndPosition);
 		UKismetSystemLibrary::ExecuteConsoleCommand(this, "vr.PixelDensity 1.0");
 
 		if (const APlayerController* PlayerController = GetController<APlayerController>())
@@ -186,8 +208,38 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	}
 }
 
+void ACBPawn::Reload_Implementation()
+{
+	Ammo = AmmoCapacity;
+}
+
+void ACBPawn::HookHandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp,
+                                   int OtherBodyIndex, bool bFromSweep, const FHitResult& HitResult)
+{
+	if (Other->Implements<UCBHookOverlapInteractor>())
+	{
+	    ICBHookOverlapInteractor::Execute_OnHookOverlapBegin(Other, RightHandOverlapBox);
+	}
+}
+
+void ACBPawn::HookHandEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp, int OtherBodyIndex)
+
+{
+	if (Other->Implements<UCBHookOverlapInteractor>())
+    {
+		ICBHookOverlapInteractor::Execute_OnHookOverlapEnd(Other, RightHandOverlapBox);
+    }	
+}
+
 void ACBPawn::Shoot()
 {
 	/** This can be improved, but it's okay for debugging(adding things like aim assist) */
-	GetWorld()->SpawnActor<AActor>(ProjectileClass, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator());
+	if (Ammo > 0)
+	{
+		UE_LOG(CBLog, Warning, TEXT("Shooting!"));
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		GetWorld()->SpawnActor<AActor>(ProjectileClass, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator(), SpawnParameters);
+		Ammo--;
+	}
 }

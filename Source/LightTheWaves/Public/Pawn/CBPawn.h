@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "Interface/CBGunInterface.h"
 #include "CBPawn.generated.h"
 
+class UBoxComponent;
 class UInputAction;
 class UInputMappingContext;
 class UCameraComponent;
@@ -14,15 +16,27 @@ class UXRDeviceVisualizationComponent;
 class UMotionControllerComponent;
 
 UCLASS()
-class LIGHTTHEWAVES_API ACBPawn : public APawn
+class LIGHTTHEWAVES_API ACBPawn : public APawn, public ICBGunInterface
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this pawn's properties
 	ACBPawn();
+	
+	/** Gun Interface */
+	virtual void IncreaseCapacity_Implementation(int32 IncreaseAmount) override;
+	virtual bool CanReload_Implementation() override;
+	virtual void Reload_Implementation() override;
+	/** End Gun Interface */
 
 protected:
+	UFUNCTION()
+	void HookHandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp, int OtherBodyIndex, bool bFromSweep, const FHitResult& HitResult);
+
+	UFUNCTION()
+	void HookHandEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp, int OtherBodyIndex);
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -79,6 +93,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<UMotionControllerComponent> MotionControllerRightAim;
+
+	UPROPERTY(VisibleAnywhere, Category = "Component")
+	TObjectPtr<UBoxComponent> RightHandOverlapBox;
 	/** End Right Hand */
 
 	/** The default mapping context, can be used for debug to debug input and stuff */
@@ -95,7 +112,13 @@ protected:
 
 	/** Currently called from the input action, might have to rework later in order for it work with the cannon physical interaction */
 	UFUNCTION()
-	void Shoot();
+	virtual void Shoot() override;
+
+	/** The maximum ammo that the gun can carry by default */
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
+	int32 AmmoCapacity = 5;
+
+	int32 Ammo = 0;
 	
 public:	
 	// Called every frame

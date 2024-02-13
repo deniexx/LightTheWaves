@@ -12,7 +12,7 @@
 class USphereComponent;
 
 UENUM(BlueprintType)
-enum class EBoatPathingState
+enum class EBoatPathingState : uint8
 {
 	FollowingPath,
 	FollowingLight,
@@ -41,7 +41,7 @@ public:
 	/** End Light Interactor interface */
 
 	/**Destroyable Object Interface */
-	virtual void OnDestroyed_Implementation(AActor* DestroyedActor) override;
+	virtual void OnDestroyed_Implementation(AActor* InstigatorActor, EDestroyingObject DestroyingObject) override;
 	/**End Destroyable Object interface */
 
 #if WITH_EDITORONLY_DATA	
@@ -73,6 +73,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USphereComponent> SphereTrigger;
 
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<USceneComponent> DebrisSpawnLocation;
+
 	UPROPERTY()
 	TArray<FVector> ReturnToPathPoints;
 
@@ -83,21 +86,33 @@ protected:
 	float MovementSpeed = 50.f;
 
 	/** How much points are rewarded upon reaching the docks */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Boat Properties")
 	float PointsReward = 100.f;
 
 	/** How much currency is rewarded upon reaching the docks */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	UPROPERTY(EditDefaultsOnly,  BlueprintReadOnly, Category = "Boat Properties")
 	float CurrencyReward = 25.f;
 
 	/** How much life is lost when a boat is destroyed */
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Boat Properties")
 	float LifeLoss = 10.f;
 
 	/** The maximum distance allowed between the boat and path, without having it correct itself(move back towards the path)*/
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float MaxDistanceToPathAllowed = 50.f;
 
+	/** How much further forward should the actor choose a point on the path, when returning to it
+	 * 0 means it will make as straight of a line as possible to the nearest point on the spline, not make any horizontal progress along it
+	 * > 0 means that the boat will still in a sense continue moving forward, but also towards the spline at the same time
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float ReturnToPathForwardLook = 150.f;
+
+	/** How fast does this actor rotation in the direction of which it is moving */
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float RotationRate = 150.f;
+
+	/** The debris actor to be spawned when the boat has been destroyed */
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TSubclassOf<AActor> DebrisLeftAfterDestruction;
 
@@ -117,14 +132,18 @@ private:
 	UPROPERTY()
 	TObjectPtr<USplineComponent> CurrentPath;
 
+	FVector MovementDirection;
+
 	void FollowLight(float DeltaTime);
 	void FollowPath(float DeltaTime);
 	void ReturnToPath(float DeltaTime);
 
+	void OrientRotationToMovement(float DeltaTime);
+
 	UFUNCTION(BlueprintCallable)
 	void LeaveDebris(const FVector& Location);
 
-	void DrawBoatDebugPathing(const FVector& Direction);
+	void DrawBoatDebugPathing();
 	
 	EBoatPathingState EvaluateStatePostFollowLight();
 	

@@ -72,15 +72,17 @@ void ACBPhysicalButton::OnOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 {
 	if (OtherComp == ButtonTop)
 	{
+		const bool bShowDebug = CVarDrawDebugPhysicalButtons.GetValueOnAnyThread() > 0;
+		if (bShowDebug)
+		{
+			DrawDebugSphere(GetWorld(), GetActorLocation(), 12, 12, FColor::Blue, true, 3.f);
+		}
+		
 		OnButtonActivated();
 	}
 }
 
 void ACBPhysicalButton::OnButtonActivated_Implementation()
 {
-	const bool bShowDebug = CVarDrawDebugPhysicalButtons.GetValueOnAnyThread() > 0;
-	if (bShowDebug)
-	{
-		DrawDebugSphere(GetWorld(), GetActorLocation(), 12, 12, FColor::Blue, true, 3.f);
-	}
+
 }
