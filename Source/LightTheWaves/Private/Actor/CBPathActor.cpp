@@ -6,6 +6,7 @@
 #include "Components/SplineComponent.h"
 #include "Interface/CBMonsterInterface.h"
 #include "Interface/CBPathingActor.h"
+#include "LightTheWaves/LightTheWaves.h"
 
 // Sets default values
 ACBPathActor::ACBPathActor()
@@ -69,11 +70,30 @@ bool ACBPathActor::IsBoatWithinDistanceFromStart_Implementation(float Distance)
 	}
 	
 	const FVector Start = SplineComponent->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World);
-	if ((PathingActorsOnPath.Last()->GetActorLocation() - Start).Length() > Distance)
-	{
-		return true;
-	}
 
+	if (PathingActorsOnPath.Last())
+	{
+		if ((PathingActorsOnPath.Last()->GetActorLocation() - Start).Length() > Distance)
+		{
+			return true;
+		}
+	}
+	else
+	{
+		// A bit of a hack, but this ensures that we do not crash and we still check for a boat being too close to the start without going through the whole array
+		for (int i = PathingActorsOnPath.Num() - 1; i > 0; --i)
+		{
+			if (PathingActorsOnPath[i])
+			{
+				if ((PathingActorsOnPath[i]->GetActorLocation() - Start).Length() > Distance)
+				{
+					return true;
+				}
+				break;
+			}
+		}
+	}
+	
 	return false;
 }
 
@@ -84,5 +104,24 @@ void ACBPathActor::OnMonsterDead(AActor* Actor)
 
 void ACBPathActor::OnPathingActorLeftPath(AActor* PathingActor)
 {
-	PathingActorsOnPath.Remove(PathingActor);
+	if (!PathingActor)
+	{
+		CleanArray();
+	}
+	else
+	{
+		PathingActorsOnPath.Remove(PathingActor);
+	}
+}
+
+void ACBPathActor::CleanArray()
+{
+	for (int i = PathingActorsOnPath.Num(); i > 0; --i)
+	{
+		const int AmountRemoved = PathingActorsOnPath.RemoveAll([=](const AActor* Actor) { return Actor == nullptr; });
+		if (AmountRemoved > 0)
+		{
+			UE_LOG(CBLog, Log, TEXT("Cleaned up %d nullptrs from PathActor"), AmountRemoved);
+		}
+	}
 }

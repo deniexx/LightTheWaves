@@ -4,7 +4,6 @@
 #include "Actor/CBMonsterHazard.h"
 
 #include "Interface/CBDestroyableObject.h"
-#include "LightTheWaves/LightTheWaves.h"
 
 // Sets default values
 ACBMonsterHazard::ACBMonsterHazard()

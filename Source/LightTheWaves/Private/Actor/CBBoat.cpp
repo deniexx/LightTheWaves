@@ -56,6 +56,7 @@ void ACBBoat::Tick(float DeltaTime)
 	}
 
 	OrientRotationToMovement(DeltaTime);
+	LastFrameLocation = GetActorLocation();
 	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
 	if (bDrawDebug)
 	{
@@ -73,6 +74,7 @@ void ACBBoat::FollowLight(float DeltaTime)
 	}
 	
 	MovementDirection = (FollowTarget->GetComponentLocation() - GetActorLocation()).GetSafeNormal();
+	MovementDirection.Z = 0;
 	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
 }
 
@@ -86,6 +88,7 @@ void ACBBoat::FollowPath(float DeltaTime)
 
 	const FVector LocationOnSpline = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
 	MovementDirection = CurrentPath->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
+	MovementDirection.Z = 0;
 	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
 }
 
@@ -94,9 +97,16 @@ void ACBBoat::ReturnToPath(float DeltaTime)
 	if (ReturnToPathPoints.Num() <= 0)
 	{
 		const FVector DirectionOnSpline = CurrentPath->FindDirectionClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
+		const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
 		const FVector ForwardLookLocation = GetActorLocation() + (DirectionOnSpline * ReturnToPathForwardLook);
 		FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(ForwardLookLocation, ESplineCoordinateSpace::World);
 		ClosestSplinePoint.Z = GetActorLocation().Z;
+
+		if (bDrawDebug)
+		{
+			DrawDebugSphere(GetWorld(), ForwardLookLocation, 8, 8, FColor::Yellow, false, 5);
+			DrawDebugSphere(GetWorld(), ClosestSplinePoint, 8, 8, FColor::Yellow, false, 5);
+		}
 		if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), ClosestSplinePoint))
 		{
 			ReturnToPathPoints = MoveTemp(NavPath->PathPoints);
@@ -110,20 +120,23 @@ void ACBBoat::ReturnToPath(float DeltaTime)
 		return;
 	}
 
-	if ((GetActorLocation() - ReturnToPathPoints[PointIndex]).Length() < 1.f)
+	// Using this to adjust for height
+	const FVector Point = FVector(ReturnToPathPoints[PointIndex].X, ReturnToPathPoints[PointIndex].Y, GetActorLocation().Z);
+	if ((GetActorLocation() - Point).Length() < 5.f)
 	{
-		PointIndex++;
+		++PointIndex;
 	}
-
+	
 	// Have we reached the last point?
 	if (PointIndex == ReturnToPathPoints.Num())
 	{
-		CurrentPathingState = EBoatPathingState::FollowingPath;
+		CurrentPathingState = EvaluateStatePostFollowLight();
 		ReturnToPathPoints.Empty();
 		return;
 	}
 
-	const FVector Target =  ReturnToPathPoints[PointIndex];
+	FVector Target =  ReturnToPathPoints[PointIndex];
+	Target.Z = GetActorLocation().Z;
 	MovementDirection = (Target - GetActorLocation()).GetSafeNormal();
 	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
 }
@@ -164,7 +177,8 @@ void ACBBoat::SetPath_Implementation(USplineComponent* NewPath)
 {
 	CurrentPath = NewPath;
 	SetActorLocation(CurrentPath->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World));
-
+	LastFrameLocation = GetActorLocation();
+	
 	CurrentPathingState = EBoatPathingState::FollowingPath;
 }
 

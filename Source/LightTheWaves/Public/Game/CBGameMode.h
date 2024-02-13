@@ -21,8 +21,9 @@ struct FBoatSpawningSettings
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
 	TArray<TSubclassOf<AActor>> SpawnableBoatClasses;
 
+	/** The maximum number of boats to spawned per round (goes towards the second value throughout the round) */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
-	TArray<int32> MaxBoats;
+	TArray<FVector2D> MaxBoats;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (Units = "cm"))
 	float MinimumDistanceFromPathStart = 300.f;
@@ -67,7 +68,7 @@ struct FBoatSpawningSettings
 
 	/** A curve of period of boat spawning(duration between spawns X: Start of Round, Y: End of Round) to wave number */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "!bUseCurveForBoatSpawnAmount", EditConditionHides))
-	TArray<FVector2D> MaxBoatSpawns;
+	TArray<FVector2D> BoatSpawnPeriods;
 
 	/** A curve of period of boat spawning(duration between spawns) to wave number */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "bUseCurveForBoatSpawnAmount", EditConditionHides))

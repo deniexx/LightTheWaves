@@ -78,6 +78,8 @@ protected:
 
 	UPROPERTY()
 	TArray<FVector> ReturnToPathPoints;
+	
+	FVector LastFrameLocation;
 
 	uint32 PointIndex = 0;
 
@@ -121,6 +123,7 @@ protected:
 
 private:
 
+	UPROPERTY(VisibleAnywhere, Category = "Boat Properties")
 	EBoatPathingState CurrentPathingState = EBoatPathingState::None;
 
 	UPROPERTY()

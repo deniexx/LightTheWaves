@@ -195,16 +195,16 @@ float ACBGameMode::GetBoatSpawnPeriod()
 		const float End = BoatSpawningSettings.EndOfRoundBoatSpawnCurve.Eval(WaveNumber, "");
 		BoatSpawnPeriod = FMath::Lerp(Start, End, GetPercentRoundTimeElapsed());
 	}
-	else if (!BoatSpawningSettings.bUseCurveForBoatSpawnAmount && BoatSpawningSettings.MaxBoatSpawns.Num() >= WaveNumber)
+	else if (!BoatSpawningSettings.bUseCurveForBoatSpawnAmount && BoatSpawningSettings.BoatSpawnPeriods.Num() >= WaveNumber)
 	{
-		const float Start = BoatSpawningSettings.MaxBoatSpawns[WaveNumber - 1].X;
-		const float End = BoatSpawningSettings.MaxBoatSpawns[WaveNumber - 1].Y;
+		const float Start = BoatSpawningSettings.BoatSpawnPeriods[WaveNumber - 1].X;
+		const float End = BoatSpawningSettings.BoatSpawnPeriods[WaveNumber - 1].Y;
 		BoatSpawnPeriod = FMath::Lerp(Start, End, GetPercentRoundTimeElapsed());
 	}
 	else
 	{
-		const float Start = BoatSpawningSettings.MaxBoatSpawns.Last().X;
-		const float End = BoatSpawningSettings.MaxBoatSpawns.Last().Y;
+		const float Start = BoatSpawningSettings.BoatSpawnPeriods.Last().X;
+		const float End = BoatSpawningSettings.BoatSpawnPeriods.Last().Y;
 		BoatSpawnPeriod = BOAT_SPAWN_FORMULA(FMath::Lerp(Start, End, GetPercentRoundTimeElapsed()));
 	}
 	
@@ -272,13 +272,17 @@ bool ACBGameMode::IsAtMaxBoats()
 		Boats += ICBPath::Execute_GetNumberOfBoatsOnPath(Actor);
 	}
 
-	int32 MaxBoatsAllowed = BoatSpawningSettings.MaxBoats.Last();
+	float Start = BoatSpawningSettings.MaxBoats.Last().X;
+	float End = BoatSpawningSettings.MaxBoats.Last().Y;
 	if (BoatSpawningSettings.MaxBoats.Num() >= WaveNumber)
 	{
-		MaxBoatsAllowed = BoatSpawningSettings.MaxBoats[WaveNumber - 1];
+		Start = BoatSpawningSettings.MaxBoats[WaveNumber - 1].X;
+		End = BoatSpawningSettings.MaxBoats[WaveNumber - 1].Y;
 	}
+	const float MaxBoatsAllowed = FMath::Lerp(Start, End, GetPercentRoundTimeElapsed());
+	const int32 MaxBoatsAllowedInt = FMath::RoundToInt32(MaxBoatsAllowed * 100.f) * 0.01f;
 	
-	return Boats > MaxBoatsAllowed;
+	return Boats >= MaxBoatsAllowedInt;
 }
 
 void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
@@ -337,7 +341,7 @@ void ACBGameMode::SpawnBoss()
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	// @TODO: Figure out a way to know where the boss should spawn, probably a variable on the spawn settings
-	const FVector SpawnLocation = FVector(-514.000000,7651.000000,3778.000000);
+	const FVector SpawnLocation = FVector(-458.000000,7278.000000,3450.000000);
 	AActor* BossActor = GetWorld()->SpawnActor<AActor>(BossSpawningSettings.BossActorClass, SpawnLocation, FRotator::ZeroRotator, SpawnParameters);
 
 	FActivityStateUpdatedData Data;

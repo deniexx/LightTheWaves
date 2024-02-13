@@ -28,12 +28,14 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	
 	UFUNCTION()
 	void OnPathingActorLeftPath(AActor* PathingActor);
 
 	UFUNCTION()
 	void OnMonsterDead(AActor* Actor);
+
+	void CleanArray();
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USplineComponent* SplineComponent;
