@@ -24,10 +24,10 @@ struct FBoatSpawningSettings
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
 	TArray<int32> MaxBoats;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (Units = "s"))
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (Units = "cm"))
 	float MinimumDistanceFromPathStart = 300.f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (Units = "s"))
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
 	float MinTimeVariation = -0.5f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (Units = "s"))
@@ -84,7 +84,7 @@ struct FMonsterSpawningSettings
 	GENERATED_BODY()
 
 	/** The minimum value to be used for the spawn period randomization */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (Units = "s"))
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	float MinTimeVariation = -0.5f;
 
 	/** The maximum value to be used for the spawn period randomization */

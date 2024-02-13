@@ -337,7 +337,7 @@ void ACBGameMode::SpawnBoss()
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	// @TODO: Figure out a way to know where the boss should spawn, probably a variable on the spawn settings
-	const FVector SpawnLocation = FVector(-481.000000,13141.000000,3729.000000);
+	const FVector SpawnLocation = FVector(-514.000000,7651.000000,3778.000000);
 	AActor* BossActor = GetWorld()->SpawnActor<AActor>(BossSpawningSettings.BossActorClass, SpawnLocation, FRotator::ZeroRotator, SpawnParameters);
 
 	FActivityStateUpdatedData Data;
@@ -359,6 +359,9 @@ void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
 	OnActivityStateUpdated.Broadcast(Data);
 
 	UE_LOG(CBLog, Log, TEXT("Boss Defeated!"));
+
+	// @TODO: Remove this shit ASAP
+	ProcessBossSpawning();
 }
 
 int32 ACBGameMode::GetMaxAllowedMonstersOnPath(AActor* Path)
