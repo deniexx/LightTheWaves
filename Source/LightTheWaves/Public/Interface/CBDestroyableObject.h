@@ -6,6 +6,14 @@
 #include "UObject/Interface.h"
 #include "CBDestroyableObject.generated.h"
 
+UENUM(BlueprintType)
+enum class EDestroyingObject : uint8
+{
+	Debris,
+	Monster,
+	Unknown
+};
+
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UCBDestroyableObject : public UInterface
@@ -24,5 +32,5 @@ class LIGHTTHEWAVES_API ICBDestroyableObject
 public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DestroyableObject")
-	void OnDestroyed(AActor* InstigatorActor);
+	void OnDestroyed(AActor* InstigatorActor, EDestroyingObject DestroyingObject);
 };

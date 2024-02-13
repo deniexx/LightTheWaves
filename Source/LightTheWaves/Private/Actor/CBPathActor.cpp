@@ -38,8 +38,11 @@ int32 ACBPathActor::GetNumberOfBoatsOnPath_Implementation()
 
 void ACBPathActor::RegisterBoatOnPath_Implementation(AActor* Boat)
 {
-	PathingActorsOnPath.AddUnique(Boat);
-	Cast<ICBPathingActor>(Boat)->PathingActorLeftPathEvent().AddDynamic(this, &ThisClass::OnPathingActorLeftPath);
+	if (Boat)
+	{
+		PathingActorsOnPath.AddUnique(Boat);
+		Cast<ICBPathingActor>(Boat)->PathingActorLeftPathEvent().AddDynamic(this, &ThisClass::OnPathingActorLeftPath);
+	}
 }
 
 int32 ACBPathActor::GetNumberOfMonstersOnPath_Implementation()

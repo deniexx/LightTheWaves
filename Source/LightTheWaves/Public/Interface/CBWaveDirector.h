@@ -7,7 +7,7 @@
 #include "CBWaveDirector.generated.h"
 
 UENUM(BlueprintType)
-enum class EActivityFinishedState
+enum class EActivityFinishedState : uint8
 {
 	Successful,
 	Failed,
@@ -17,7 +17,7 @@ enum class EActivityFinishedState
 };
 
 UENUM(BlueprintType)
-enum class EGameActivity
+enum class EGameActivity : uint8
 {
 	Wave,
 	Recess,

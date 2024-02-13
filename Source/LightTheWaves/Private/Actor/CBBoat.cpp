@@ -28,9 +28,11 @@ ACBBoat::ACBBoat()
 
 	SphereTrigger = CreateDefaultSubobject<USphereComponent>(FName("SphereTrigger"));
 	BoatMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("BoatMesh"));
-
+	DebrisSpawnLocation = CreateDefaultSubobject<USceneComponent>(FName("DebrisSpawnLocation"));
+	
 	SetRootComponent(SphereTrigger);
 	BoatMesh->SetupAttachment(GetRootComponent());
+	DebrisSpawnLocation->SetupAttachment(GetRootComponent());
 
 	CurrentPathingState = EBoatPathingState::ReturningToPath;
 }
@@ -142,7 +144,10 @@ void ACBBoat::OrientRotationToMovement(float DeltaTime)
 void ACBBoat::LeaveDebris(const FVector& Location)
 {
 	// @NOTE: Potentially randomize the rotation of the debris on an axis
-	GetWorld()->SpawnActor<AActor>(DebrisLeftAfterDestruction, Location, FRotator::ZeroRotator);
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Instigator = this;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	GetWorld()->SpawnActor<AActor>(DebrisLeftAfterDestruction, DebrisSpawnLocation->GetComponentLocation(), GetActorRotation(), SpawnParameters);
 }
 
 void ACBBoat::DrawBoatDebugPathing()
@@ -193,9 +198,13 @@ void ACBBoat::OnLightFocusEnd_Implementation()
 	CurrentPathingState = EvaluateStatePostFollowLight();
 }
 
-void ACBBoat::OnDestroyed_Implementation(AActor* InstigatorActor)
+void ACBBoat::OnDestroyed_Implementation(AActor* InstigatorActor, EDestroyingObject DestroyingObject)
 {
-	LeaveDebris(GetActorLocation());
+	if (DestroyingObject != EDestroyingObject::Debris)
+	{
+		LeaveDebris(GetActorLocation());
+	}
+
 	OnPathingActorLeftPath.Broadcast(this);
 	Destroy();
 }

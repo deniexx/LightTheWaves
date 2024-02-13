@@ -216,8 +216,11 @@ void ACBGameMode::SpawnBoat(AActor* PathActor)
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	AActor* Boat = GetWorld()->SpawnActor<AActor>(GetRandomSpawnableBoat(), SpawnParameters);
-	ICBPathingActor::Execute_SetPath(Boat, ICBPath::Execute_GetPath(PathActor));
-	ICBPath::Execute_RegisterBoatOnPath(PathActor, Boat);
+	if (Boat)
+	{
+		ICBPathingActor::Execute_SetPath(Boat, ICBPath::Execute_GetPath(PathActor));
+		ICBPath::Execute_RegisterBoatOnPath(PathActor, Boat);
+	}
 }
 
 bool ACBGameMode::TrySpawnBoat()

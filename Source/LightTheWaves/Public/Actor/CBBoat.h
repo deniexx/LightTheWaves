@@ -12,7 +12,7 @@
 class USphereComponent;
 
 UENUM(BlueprintType)
-enum class EBoatPathingState
+enum class EBoatPathingState : uint8
 {
 	FollowingPath,
 	FollowingLight,
@@ -41,7 +41,7 @@ public:
 	/** End Light Interactor interface */
 
 	/**Destroyable Object Interface */
-	virtual void OnDestroyed_Implementation(AActor* InstigatorActor) override;
+	virtual void OnDestroyed_Implementation(AActor* InstigatorActor, EDestroyingObject DestroyingObject) override;
 	/**End Destroyable Object interface */
 
 #if WITH_EDITORONLY_DATA	
@@ -72,6 +72,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USphereComponent> SphereTrigger;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<USceneComponent> DebrisSpawnLocation;
 
 	UPROPERTY()
 	TArray<FVector> ReturnToPathPoints;
