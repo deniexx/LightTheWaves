@@ -87,6 +87,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float MovementSpeed = 50.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float LightFollowSpeed = 500.f;
+
 	/** How much points are rewarded upon reaching the docks */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Boat Properties")
 	float PointsReward = 100.f;

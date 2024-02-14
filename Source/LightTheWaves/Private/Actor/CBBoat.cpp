@@ -75,7 +75,7 @@ void ACBBoat::FollowLight(float DeltaTime)
 	
 	MovementDirection = (FollowTarget->GetComponentLocation() - GetActorLocation()).GetSafeNormal();
 	MovementDirection.Z = 0;
-	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
+	AddActorWorldOffset(MovementDirection * LightFollowSpeed * DeltaTime);
 }
 
 void ACBBoat::FollowPath(float DeltaTime)

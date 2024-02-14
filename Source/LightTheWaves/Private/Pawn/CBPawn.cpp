@@ -204,7 +204,8 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	/** @NOTE: This is probably only for debug or can be added to have controls for recentering, etc... */
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		EnhancedInputComponent->BindAction(ShootInputAction, ETriggerEvent::Started, this, &ThisClass::Shoot);
+		// @NOTE: Uncomment this for keybind for shooting
+		//EnhancedInputComponent->BindAction(ShootInputAction, ETriggerEvent::Started, this, &ThisClass::Shoot);
 	}
 }
 
