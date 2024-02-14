@@ -33,6 +33,7 @@ public:
 	void IncreaseCapacity(int32 IncreaseAmount = 1);
 
 protected:
+
 	virtual void Shoot() = 0;
 	
 };
