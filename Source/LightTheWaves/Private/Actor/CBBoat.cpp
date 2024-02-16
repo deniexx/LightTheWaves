@@ -10,6 +10,7 @@
 #include "LightTheWaves/LightTheWaves.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
+#include "Components/InstancedStaticMeshComponent.h"
 
 static TAutoConsoleVariable<int32> CVarDrawDebugBoatPathing(
 	TEXT("ShowDebugBoatPathing"),
@@ -29,11 +30,13 @@ ACBBoat::ACBBoat()
 	SphereTrigger = CreateDefaultSubobject<USphereComponent>(FName("SphereTrigger"));
 	BoatMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("BoatMesh"));
 	DebrisSpawnLocation = CreateDefaultSubobject<USceneComponent>(FName("DebrisSpawnLocation"));
+	BoatPathingVis = CreateDefaultSubobject<UInstancedStaticMeshComponent>(FName("BoatPathingVis"));
 	
 	SetRootComponent(SphereTrigger);
 	BoatMesh->SetupAttachment(GetRootComponent());
 	DebrisSpawnLocation->SetupAttachment(GetRootComponent());
-
+	BoatPathingVis->SetupAttachment(BoatMesh);
+	
 	CurrentPathingState = EBoatPathingState::ReturningToPath;
 }
 
@@ -269,4 +272,15 @@ EBoatPathingState ACBBoat::EvaluateStatePostFollowLight()
 	}
 	
 	return EBoatPathingState::FollowingPath;
+}
+
+void ACBBoat::AddInstancedMeshesForPathVis()
+{
+	BoatPathingVis->SetVisibility(true);
+	BoatPathingVis->SetStaticMesh(BoatPathingVisMesh);
+
+	const FBox Bounds = BoatPathingVisMesh->GetBoundingBox();
+	float Spacing = Bounds.Min.X - Bounds.Max.X + 5;
+
+	// @TODO: Make a spline component and use that to visualize boat return path
 }

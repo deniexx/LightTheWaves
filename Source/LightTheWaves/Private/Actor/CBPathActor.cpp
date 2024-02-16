@@ -3,6 +3,7 @@
 
 #include "Actor/CBPathActor.h"
 
+#include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SplineComponent.h"
 #include "Interface/CBMonsterInterface.h"
 #include "Interface/CBPathingActor.h"
@@ -17,6 +18,9 @@ ACBPathActor::ACBPathActor()
 	SplineComponent = CreateDefaultSubobject<USplineComponent>(FName("Path"));
 	SetRootComponent(SplineComponent);
 	Tags.Add("Path");
+
+	InstancedPath = CreateDefaultSubobject<UInstancedStaticMeshComponent>(FName("InstancedPath"));
+	InstancedPath->SetupAttachment(SplineComponent);
 }
 
 // Called when the game starts or when spawned
@@ -43,6 +47,7 @@ void ACBPathActor::RegisterBoatOnPath_Implementation(AActor* Boat)
 	{
 		PathingActorsOnPath.AddUnique(Boat);
 		Cast<ICBPathingActor>(Boat)->PathingActorLeftPathEvent().AddDynamic(this, &ThisClass::OnPathingActorLeftPath);
+		InstancedPath->SetVisibility(true);
 	}
 }
 
@@ -112,6 +117,12 @@ void ACBPathActor::OnPathingActorLeftPath(AActor* PathingActor)
 	{
 		PathingActorsOnPath.Remove(PathingActor);
 	}
+	
+	if(PathingActorsOnPath.IsEmpty())
+	{
+		InstancedPath->SetVisibility(false);
+	}
+
 }
 
 void ACBPathActor::CleanArray()

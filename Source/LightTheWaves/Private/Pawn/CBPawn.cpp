@@ -204,8 +204,8 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	/** @NOTE: This is probably only for debug or can be added to have controls for recentering, etc... */
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		// @NOTE: Uncomment this for keybind for shooting
-		//EnhancedInputComponent->BindAction(ShootInputAction, ETriggerEvent::Started, this, &ThisClass::Shoot);
+		EnhancedInputComponent->BindAction(RecenterInputAction, ETriggerEvent::Started, this, &ThisClass::OnRecenterStarted);
+		EnhancedInputComponent->BindAction(RecenterInputAction, ETriggerEvent::Completed, this, &ThisClass::OnRecenterEnded);
 	}
 }
 
@@ -242,5 +242,24 @@ void ACBPawn::Shoot()
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		GetWorld()->SpawnActor<AActor>(ProjectileClass, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator(), SpawnParameters);
 		Ammo--;
+	}
+}
+
+void ACBPawn::RecenterTimer_Elapsed()
+{
+	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0, EOrientPositionSelector::OrientationAndPosition);
+}
+
+void ACBPawn::OnRecenterStarted()
+{
+	// @TODO: Maybe add some visualization that this is happening
+	GetWorldTimerManager().SetTimer(RecenterTimerHandle, this, &ThisClass::RecenterTimer_Elapsed, 3.f);
+}
+
+void ACBPawn::OnRecenterEnded()
+{
+	if (RecenterTimerHandle.IsValid())
+	{
+		GetWorldTimerManager().ClearTimer(RecenterTimerHandle);
 	}
 }

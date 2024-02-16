@@ -102,10 +102,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
 
-	/** Shoot input action for debug purposes */
+	/** Recenter input action */
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> ShootInputAction;
-
+	TObjectPtr<UInputAction> RecenterInputAction;
+	
 	/** Projectile class to spawn from the cannon */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	TSubclassOf<AActor> ProjectileClass;
@@ -114,6 +114,18 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual void Shoot() override;
 
+	UFUNCTION()
+	void RecenterTimer_Elapsed();
+	
+	UFUNCTION()
+	void OnRecenterStarted();
+
+	UFUNCTION()
+	void OnRecenterEnded();
+
+	UPROPERTY()
+	FTimerHandle RecenterTimerHandle;
+	
 	/** The maximum ammo that the gun can carry by default */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	int32 AmmoCapacity = 5;

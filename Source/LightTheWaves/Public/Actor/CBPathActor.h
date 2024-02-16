@@ -37,9 +37,12 @@ protected:
 
 	void CleanArray();
 
-	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USplineComponent* SplineComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UInstancedStaticMeshComponent* InstancedPath;
+	
 	UPROPERTY()
 	TArray<AActor*> PathingActorsOnPath;
 

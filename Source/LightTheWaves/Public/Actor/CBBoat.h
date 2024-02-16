@@ -76,6 +76,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USceneComponent> DebrisSpawnLocation;
 
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UInstancedStaticMeshComponent> BoatPathingVis;
+
 	UPROPERTY()
 	TArray<FVector> ReturnToPathPoints;
 	
@@ -117,6 +120,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float RotationRate = 150.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	TObjectPtr<UStaticMesh> BoatPathingVisMesh;
+	
 	/** The debris actor to be spawned when the boat has been destroyed */
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TSubclassOf<AActor> DebrisLeftAfterDestruction;
@@ -152,7 +158,8 @@ private:
 	void DrawBoatDebugPathing();
 	
 	EBoatPathingState EvaluateStatePostFollowLight();
-	
+
+	void AddInstancedMeshesForPathVis();
 	FORCEINLINE bool IsFollowingLight() const { return CurrentPathingState == EBoatPathingState::FollowingLight; }
 	FORCEINLINE bool IsFollowingPath() const { return CurrentPathingState == EBoatPathingState::FollowingPath; }
 	FORCEINLINE bool IsReturningToPath() const { return CurrentPathingState == EBoatPathingState::ReturningToPath; }
