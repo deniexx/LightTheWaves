@@ -11,8 +11,12 @@ enum class EDestroyingObject : uint8
 {
 	Debris,
 	Monster,
+	Port,
+	Hazard,
+	
 	Unknown
 };
+ENUM_CLASS_FLAGS(EDestroyingObject)
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)

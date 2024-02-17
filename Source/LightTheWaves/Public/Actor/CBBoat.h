@@ -78,7 +78,10 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UInstancedStaticMeshComponent> BoatPathingVis;
-
+	
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<USplineComponent> BoatPathingVisSpline;
+	
 	UPROPERTY()
 	TArray<FVector> ReturnToPathPoints;
 	
@@ -121,11 +124,17 @@ protected:
 	float RotationRate = 150.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float ScanDelayCheckClosestPath = 0.1;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TObjectPtr<UStaticMesh> BoatPathingVisMesh;
 	
 	/** The debris actor to be spawned when the boat has been destroyed */
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TSubclassOf<AActor> DebrisLeftAfterDestruction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties", meta = (Bitmask, BitmaskEnum="EDestroyingObject"))
+	uint8 DebrisLeavingObjects;
 
 	UPROPERTY(BlueprintAssignable, Category = "Boat Properties")
 	FOnPathingActorLeftPath OnPathingActorLeftPath;
@@ -134,6 +143,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Boat Properties")
 	EBoatPathingState CurrentPathingState = EBoatPathingState::None;
+
+	UPROPERTY()
+	FTimerHandle CheckClosestPathTimerHandle;
 
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent> FollowTarget;
@@ -145,10 +157,13 @@ private:
 	TObjectPtr<USplineComponent> CurrentPath;
 
 	FVector MovementDirection;
+	FVector CachedDestination;
 
 	void FollowLight(float DeltaTime);
 	void FollowPath(float DeltaTime);
 	void ReturnToPath(float DeltaTime);
+
+	void SetState(EBoatPathingState NewState);
 
 	void OrientRotationToMovement(float DeltaTime);
 
@@ -159,7 +174,11 @@ private:
 	
 	EBoatPathingState EvaluateStatePostFollowLight();
 
-	void AddInstancedMeshesForPathVis();
+	UFUNCTION()
+	void CheckClosestPath_Elapsed();
+	
+	void AddInstancedMeshesForPathVis() const;
+	
 	FORCEINLINE bool IsFollowingLight() const { return CurrentPathingState == EBoatPathingState::FollowingLight; }
 	FORCEINLINE bool IsFollowingPath() const { return CurrentPathingState == EBoatPathingState::FollowingPath; }
 	FORCEINLINE bool IsReturningToPath() const { return CurrentPathingState == EBoatPathingState::ReturningToPath; }

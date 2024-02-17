@@ -12,6 +12,8 @@
 #include "NavigationSystem.h"
 #include "Components/InstancedStaticMeshComponent.h"
 
+#define TEST_BIT(Bitmask, Bit) (((Bitmask) & (1 << static_cast<uint8>(Bit))) > 0)
+
 static TAutoConsoleVariable<int32> CVarDrawDebugBoatPathing(
 	TEXT("ShowDebugBoatPathing"),
 	0,
@@ -31,11 +33,12 @@ ACBBoat::ACBBoat()
 	BoatMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("BoatMesh"));
 	DebrisSpawnLocation = CreateDefaultSubobject<USceneComponent>(FName("DebrisSpawnLocation"));
 	BoatPathingVis = CreateDefaultSubobject<UInstancedStaticMeshComponent>(FName("BoatPathingVis"));
+	BoatPathingVisSpline = CreateDefaultSubobject<USplineComponent>(FName("PathingVisSpline"));
 	
 	SetRootComponent(SphereTrigger);
 	BoatMesh->SetupAttachment(GetRootComponent());
 	DebrisSpawnLocation->SetupAttachment(GetRootComponent());
-	BoatPathingVis->SetupAttachment(BoatMesh);
+	BoatPathingVis->SetupAttachment(BoatPathingVisSpline);
 	
 	CurrentPathingState = EBoatPathingState::ReturningToPath;
 }
@@ -59,7 +62,6 @@ void ACBBoat::Tick(float DeltaTime)
 	}
 
 	OrientRotationToMovement(DeltaTime);
-	LastFrameLocation = GetActorLocation();
 	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
 	if (bDrawDebug)
 	{
@@ -67,13 +69,21 @@ void ACBBoat::Tick(float DeltaTime)
 	}
 }
 
+void ACBBoat::SetState(EBoatPathingState NewState)
+{
+	CurrentPathingState = NewState;
+
+	if (NewState != EBoatPathingState::ReturningToPath)
+	{
+		BoatPathingVis->SetVisibility(false);
+	}
+}
+
 void ACBBoat::FollowLight(float DeltaTime)
 {
 	if (!FollowTarget)
 	{
-		UE_LOG(CBLog, Error, TEXT("Light is in follow light state, but does not have a FollowTarget! THIS IS A BUG!"))
-		CurrentPathingState = EvaluateStatePostFollowLight();
-		return;
+		Execute_OnLightFocusEnd(this);
 	}
 	
 	MovementDirection = (FollowTarget->GetComponentLocation() - GetActorLocation()).GetSafeNormal();
@@ -101,46 +111,44 @@ void ACBBoat::ReturnToPath(float DeltaTime)
 	{
 		const FVector DirectionOnSpline = CurrentPath->FindDirectionClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
 		const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
-		const FVector ForwardLookLocation = GetActorLocation() + (DirectionOnSpline * ReturnToPathForwardLook);
-		FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(ForwardLookLocation, ESplineCoordinateSpace::World);
-		ClosestSplinePoint.Z = GetActorLocation().Z;
+		const FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
+		const FVector ForwardLookLocation = ClosestSplinePoint + (DirectionOnSpline * ReturnToPathForwardLook);
+		FVector DesiredLocation = CurrentPath->FindLocationClosestToWorldLocation(ForwardLookLocation, ESplineCoordinateSpace::World);
+		DesiredLocation.Z = GetActorLocation().Z;
 
 		if (bDrawDebug)
 		{
 			DrawDebugSphere(GetWorld(), ForwardLookLocation, 8, 8, FColor::Yellow, false, 5);
-			DrawDebugSphere(GetWorld(), ClosestSplinePoint, 8, 8, FColor::Yellow, false, 5);
+			DrawDebugSphere(GetWorld(), DesiredLocation, 8, 8, FColor::Yellow, false, 5);
 		}
-		if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), ClosestSplinePoint))
+		if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), DesiredLocation))
 		{
 			ReturnToPathPoints = MoveTemp(NavPath->PathPoints);
 			PointIndex = 0;
+			CachedDestination = ReturnToPathPoints[ReturnToPathPoints.Num() - 1];
+			const float ActorZ = GetActorLocation().Z;
+			CachedDestination.Z = ActorZ;
+
+			BoatPathingVisSpline->ClearSplinePoints();
+			for (const auto& Point : ReturnToPathPoints)
+			{
+				BoatPathingVisSpline->AddSplinePoint(FVector(Point.X, Point.Y, ActorZ), ESplineCoordinateSpace::World);
+			}
+
+			AddInstancedMeshesForPathVis();
 		}
 	}
-
-	if (ReturnToPathPoints.Num() <= 0)
-	{
-		// Try again to generate a path
-		return;
-	}
-
-	// Using this to adjust for height
-	const FVector Point = FVector(ReturnToPathPoints[PointIndex].X, ReturnToPathPoints[PointIndex].Y, GetActorLocation().Z);
-	if ((GetActorLocation() - Point).Length() < 5.f)
-	{
-		++PointIndex;
-	}
 	
-	// Have we reached the last point?
-	if (PointIndex == ReturnToPathPoints.Num())
+	if ((GetActorLocation() - CachedDestination).Length() < 5.f)
 	{
-		CurrentPathingState = EvaluateStatePostFollowLight();
+		SetState(EBoatPathingState::FollowingPath);
 		ReturnToPathPoints.Empty();
 		return;
 	}
 
-	FVector Target =  ReturnToPathPoints[PointIndex];
-	Target.Z = GetActorLocation().Z;
-	MovementDirection = (Target - GetActorLocation()).GetSafeNormal();
+	const FVector LocationOnSpline = BoatPathingVisSpline->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
+	MovementDirection = BoatPathingVisSpline->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
+	MovementDirection.Z = 0;
 	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
 }
 
@@ -180,9 +188,8 @@ void ACBBoat::SetPath_Implementation(USplineComponent* NewPath)
 {
 	CurrentPath = NewPath;
 	SetActorLocation(CurrentPath->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World));
-	LastFrameLocation = GetActorLocation();
 	
-	CurrentPathingState = EBoatPathingState::FollowingPath;
+	SetState(EBoatPathingState::FollowingPath);
 }
 
 FOnPathingActorLeftPath& ACBBoat::PathingActorLeftPathEvent()
@@ -199,7 +206,13 @@ void ACBBoat::OnLightFocused_Implementation(UPrimitiveComponent* TargetComponent
 	}
 	
 	FollowTarget = TargetComponent;
-	CurrentPathingState = EBoatPathingState::FollowingLight;
+	SetState(EBoatPathingState::FollowingLight);
+	ReturnToPathPoints.Empty();
+
+	if (!CheckClosestPathTimerHandle.IsValid())
+	{
+		GetWorldTimerManager().SetTimer(CheckClosestPathTimerHandle, this, &ThisClass::CheckClosestPath_Elapsed, ScanDelayCheckClosestPath, true);
+	}
 }
 
 void ACBBoat::OnLightFocusEnd_Implementation()
@@ -212,12 +225,14 @@ void ACBBoat::OnLightFocusEnd_Implementation()
 
 	ReturnToPathPoints.Empty();
 	FollowTarget = nullptr;
-	CurrentPathingState = EvaluateStatePostFollowLight();
+	SetState(EvaluateStatePostFollowLight());
+
+	GetWorldTimerManager().ClearTimer(CheckClosestPathTimerHandle);
 }
 
 void ACBBoat::OnDestroyed_Implementation(AActor* InstigatorActor, EDestroyingObject DestroyingObject)
 {
-	if (DestroyingObject != EDestroyingObject::Debris)
+	if (TEST_BIT(DebrisLeavingObjects, DestroyingObject))
 	{
 		LeaveDebris(GetActorLocation());
 	}
@@ -274,13 +289,34 @@ EBoatPathingState ACBBoat::EvaluateStatePostFollowLight()
 	return EBoatPathingState::FollowingPath;
 }
 
-void ACBBoat::AddInstancedMeshesForPathVis()
+void ACBBoat::CheckClosestPath_Elapsed()
 {
+	USplineComponent* SplineComponent = ICBPathProvider::Execute_GetClosestPath(GetWorld()->GetAuthGameMode(), this);
+	if (SplineComponent != CurrentPath)
+	{
+		OnPathingActorLeftPath.Broadcast(this);
+		CurrentPath = SplineComponent;
+		ICBPathProvider::Execute_RegisterPathingActorWithPath(GetWorld()->GetAuthGameMode(), this, SplineComponent);
+	}
+}
+
+void ACBBoat::AddInstancedMeshesForPathVis() const
+{
+	BoatPathingVis->ClearInstances();
 	BoatPathingVis->SetVisibility(true);
 	BoatPathingVis->SetStaticMesh(BoatPathingVisMesh);
 
 	const FBox Bounds = BoatPathingVisMesh->GetBoundingBox();
-	float Spacing = Bounds.Min.X - Bounds.Max.X + 5;
-
-	// @TODO: Make a spline component and use that to visualize boat return path
+	const float Spacing = Bounds.Max.X - Bounds.Min.X + 5;
+	
+	const int32 NumberOfInstances = FMath::FloorToInt32(BoatPathingVisSpline->GetSplineLength() / Spacing);
+	for (int i = 0; i < NumberOfInstances + 1; ++i)
+	{
+		const float Distance = Spacing * i;
+		const FVector Location = BoatPathingVisSpline->GetLocationAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::Local);
+		FRotator Rotation = BoatPathingVisSpline->GetRotationAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::Local);
+		Rotation.Yaw += 90.f;
+		FTransform Transform(Rotation, Location);
+		BoatPathingVis->AddInstance(Transform);
+	}
 }
