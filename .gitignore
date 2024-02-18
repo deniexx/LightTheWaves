@@ -63,6 +63,9 @@ Build/*
 Config/DefaultEngine.ini
 .vsconfig
 
+*.user
+LightTheWaves.sln.DotSettings.user
+
 # Whitelist PakBlacklist-<BuildConfiguration>.txt files
 !Build/*/
 Build/*/**

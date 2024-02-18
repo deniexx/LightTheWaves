@@ -9,6 +9,7 @@
 #include "Interface/CBDestroyableObject.h"
 #include "CBBoat.generated.h"
 
+class UCBObjectDamageDefinition;
 class USphereComponent;
 
 UENUM(BlueprintType)
@@ -41,7 +42,9 @@ public:
 	/** End Light Interactor interface */
 
 	/**Destroyable Object Interface */
-	virtual void OnDestroyed_Implementation(AActor* InstigatorActor, EDestroyingObject DestroyingObject) override;
+	virtual void TakeDamage_Implementation(AActor* InstigatorActor, EDestroyingObject DestroyingObject, float IncomingDamage) override;
+	virtual float GetMaxHealth_Implementation() const override;
+	virtual float GetCurrentHealth_Implementation() const override;
 	/**End Destroyable Object interface */
 
 #if WITH_EDITORONLY_DATA	
@@ -67,6 +70,8 @@ public:
 	
 protected:
 
+	virtual void BeginPlay() override;
+
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> BoatMesh;
 
@@ -88,6 +93,10 @@ protected:
 	FVector LastFrameLocation;
 
 	uint32 PointIndex = 0;
+
+	/** The starting health of the boat */
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float MaxHealth = 100.f;;
 
 	/** How fast does the boat move */
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
@@ -139,6 +148,8 @@ protected:
 	UPROPERTY(BlueprintAssignable, Category = "Boat Properties")
 	FOnPathingActorLeftPath OnPathingActorLeftPath;
 
+	void Die(EDestroyingObject DestroyingObject);
+
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Boat Properties")
@@ -184,6 +195,7 @@ private:
 	FORCEINLINE bool IsReturningToPath() const { return CurrentPathingState == EBoatPathingState::ReturningToPath; }
 	FORCEINLINE bool IsNotFollowingLight() const { return CurrentPathingState != EBoatPathingState::FollowingLight; }
 
+	float Health;
 	
 public:
 	
