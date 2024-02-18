@@ -12,8 +12,6 @@
 #include "NavigationSystem.h"
 #include "Components/InstancedStaticMeshComponent.h"
 
-#define TEST_BIT(Bitmask, Bit) (((Bitmask) & (1 << static_cast<uint8>(Bit))) > 0)
-
 static TAutoConsoleVariable<int32> CVarDrawDebugBoatPathing(
 	TEXT("ShowDebugBoatPathing"),
 	0,
@@ -41,6 +39,13 @@ ACBBoat::ACBBoat()
 	BoatPathingVis->SetupAttachment(BoatPathingVisSpline);
 	
 	CurrentPathingState = EBoatPathingState::ReturningToPath;
+}
+
+void ACBBoat::BeginPlay()
+{
+	Super::BeginPlay();
+
+	Health = MaxHealth;
 }
 
 // Called every frame
@@ -230,7 +235,29 @@ void ACBBoat::OnLightFocusEnd_Implementation()
 	GetWorldTimerManager().ClearTimer(CheckClosestPathTimerHandle);
 }
 
-void ACBBoat::OnDestroyed_Implementation(AActor* InstigatorActor, EDestroyingObject DestroyingObject)
+void ACBBoat::TakeDamage_Implementation(AActor* InstigatorActor, EDestroyingObject DestroyingObject, float IncomingDamage)
+{
+	Health = FMath::Clamp(Health - IncomingDamage, 0.f, MaxHealth);
+	
+	if (Health <= 0.f)
+	{
+		Die(DestroyingObject);
+	}
+
+	// @NOTE: Can add some visual feedback here
+}
+
+float ACBBoat::GetMaxHealth_Implementation() const
+{
+	return MaxHealth;
+}
+
+float ACBBoat::GetCurrentHealth_Implementation() const
+{
+	return Health;
+}
+
+void ACBBoat::Die(EDestroyingObject DestroyingObject)
 {
 	if (TEST_BIT(DebrisLeavingObjects, DestroyingObject))
 	{
@@ -307,7 +334,7 @@ void ACBBoat::AddInstancedMeshesForPathVis() const
 	BoatPathingVis->SetStaticMesh(BoatPathingVisMesh);
 
 	const FBox Bounds = BoatPathingVisMesh->GetBoundingBox();
-	const float Spacing = Bounds.Max.X - Bounds.Min.X + 5;
+	const float Spacing = Bounds.Max.X - Bounds.Min.X;
 	
 	const int32 NumberOfInstances = FMath::FloorToInt32(BoatPathingVisSpline->GetSplineLength() / Spacing);
 	for (int i = 0; i < NumberOfInstances + 1; ++i)

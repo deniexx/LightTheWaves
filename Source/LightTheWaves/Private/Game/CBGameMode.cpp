@@ -3,6 +3,8 @@
 
 #include "Game/CBGameMode.h"
 
+#include "CBBlueprintFunctionLibrary.h"
+#include "CBInitialiser.h"
 #include "Actor/CBBoat.h"
 #include "Components/SplineComponent.h"
 #include "EnvironmentQuery/EnvQueryInstanceBlueprintWrapper.h"
@@ -15,6 +17,7 @@
 #define MAX_BOATS_PER_PATH_FORMULA(WaveNumber) 1
 #define MONSTER_SPAWN_FORMULA(WaveNumber) WaveNumber
 
+class UCBInitialiser;
 static TAutoConsoleVariable<int32> CVarDrawDebugMonsterSpawn(
 	TEXT("ShowDebugMonsterSpawn"),
 	0,
@@ -34,6 +37,10 @@ void ACBGameMode::BeginPlay()
 	Super::BeginPlay();
 	
 	UGameplayStatics::GetAllActorsWithTag(this, FName("Path"), PathActors);
+	
+	UCBInitialiser* Initialiser = UCBBlueprintFunctionLibrary::GetInitialisationSubsystem(this);
+	UE_LOG(CBLog, Error, TEXT("Initialiser not available at BeginPlay of CBGameMode"));
+	Initialiser->RegisterGameMode(this);
 }
 
 void ACBGameMode::TestGameplay()

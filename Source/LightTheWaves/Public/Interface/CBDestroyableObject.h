@@ -36,5 +36,11 @@ class LIGHTTHEWAVES_API ICBDestroyableObject
 public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DestroyableObject")
-	void OnDestroyed(AActor* InstigatorActor, EDestroyingObject DestroyingObject);
+	float GetMaxHealth() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DestroyableObject")
+	float GetCurrentHealth() const;
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DestroyableObject")
+	void TakeDamage(AActor* InstigatorActor, EDestroyingObject DestroyingObject, float IncomingDamage);
 };

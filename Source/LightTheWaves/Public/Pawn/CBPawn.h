@@ -7,6 +7,7 @@
 #include "Interface/CBGunInterface.h"
 #include "CBPawn.generated.h"
 
+class UWidgetComponent;
 class UBoxComponent;
 class UInputAction;
 class UInputMappingContext;
@@ -14,6 +15,8 @@ class UCameraComponent;
 class UPhysicsConstraintComponent;
 class UXRDeviceVisualizationComponent;
 class UMotionControllerComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAmmoUpdated, int32, NewAmmoCount);
 
 UCLASS()
 class LIGHTTHEWAVES_API ACBPawn : public APawn, public ICBGunInterface
@@ -75,6 +78,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> HMD;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
+	TObjectPtr<UWidgetComponent> RecenterWidgetComponent;
+
 	/** Right Hand */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UMotionControllerComponent> MotionControllerRight;
@@ -109,15 +115,15 @@ protected:
 	/** Projectile class to spawn from the cannon */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	TSubclassOf<AActor> ProjectileClass;
-
+	
 	/** Currently called from the input action, might have to rework later in order for it work with the cannon physical interaction */
 	UFUNCTION(BlueprintCallable)
 	virtual void Shoot() override;
 
 	UFUNCTION()
 	void RecenterTimer_Elapsed();
-	
-	UFUNCTION()
+
+	UFUNCTION(Exec)
 	void OnRecenterStarted();
 
 	UFUNCTION()
@@ -125,6 +131,9 @@ protected:
 
 	UPROPERTY()
 	FTimerHandle RecenterTimerHandle;
+
+	UPROPERTY(BlueprintAssignable, Category = "CBPawn")
+	FOnAmmoUpdated OnAmmoUpdated;
 	
 	/** The maximum ammo that the gun can carry by default */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
@@ -135,7 +144,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
+	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 

@@ -3,6 +3,8 @@
 
 #include "Pawn/CBPawn.h"
 
+#include "CBBlueprintFunctionLibrary.h"
+#include "CBInitialiser.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "MotionControllerComponent.h"
 #include "XRDeviceVisualizationComponent.h"
@@ -12,6 +14,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Interface/CBHookOverlapInteractor.h"
 #include "LightTheWaves/LightTheWaves.h"
 
@@ -39,6 +42,7 @@ ACBPawn::ACBPawn()
 	HandRight = CreateDefaultSubobject<UStaticMeshComponent>(FName("HandRight"));
 	MotionControllerRightAim = CreateDefaultSubobject<UMotionControllerComponent>(FName("MotionControllerRightAim"));
 	RightHandOverlapBox = CreateDefaultSubobject<UBoxComponent>(FName("RightHandOverlapBox"));
+	RecenterWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(FName("RecenterWidgetComponent"));
 #pragma endregion
 
 #pragma region Attachments
@@ -53,6 +57,7 @@ ACBPawn::ACBPawn()
 	PhysicsConstraintLeft->SetupAttachment(PivotLeft);
 
 	Camera->SetupAttachment(GetRootComponent());
+	RecenterWidgetComponent->SetupAttachment(Camera);
 	HMD->SetupAttachment(Camera);
 
 	MotionControllerRightAim->SetupAttachment(GetRootComponent());
@@ -102,6 +107,7 @@ ACBPawn::ACBPawn()
 	HandCannon->SetSimulatePhysics(true);
 
 	Camera->bLockToHmd = true;
+	RecenterWidgetComponent->SetVisibility(false);
 
 	MotionControllerRight->SetTrackingMotionSource(FName("Right"));
 	MotionControllerRight->SetAssociatedPlayerIndex(0);
@@ -187,6 +193,10 @@ void ACBPawn::BeginPlay()
 			}
 		}
 	}
+
+	UCBInitialiser* Initialiser = UCBBlueprintFunctionLibrary::GetInitialisationSubsystem(this);
+	UE_LOG(CBLog, Error, TEXT("Initialiser not available at BeginPlay of CBPawn"));
+	Initialiser->RegisterPlayerPawn(this);
 }
 
 // Called every frame
@@ -212,6 +222,7 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void ACBPawn::Reload_Implementation()
 {
 	Ammo = AmmoCapacity;
+	OnAmmoUpdated.Broadcast(Ammo);
 }
 
 void ACBPawn::HookHandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp,
@@ -224,7 +235,6 @@ void ACBPawn::HookHandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 }
 
 void ACBPawn::HookHandEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp, int OtherBodyIndex)
-
 {
 	if (Other->Implements<UCBHookOverlapInteractor>())
     {
@@ -242,24 +252,27 @@ void ACBPawn::Shoot()
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		GetWorld()->SpawnActor<AActor>(ProjectileClass, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator(), SpawnParameters);
 		Ammo--;
+		OnAmmoUpdated.Broadcast(Ammo);
 	}
-}
-
-void ACBPawn::RecenterTimer_Elapsed()
-{
-	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0, EOrientPositionSelector::OrientationAndPosition);
 }
 
 void ACBPawn::OnRecenterStarted()
 {
-	// @TODO: Maybe add some visualization that this is happening
+	RecenterWidgetComponent->SetVisibility(true);
 	GetWorldTimerManager().SetTimer(RecenterTimerHandle, this, &ThisClass::RecenterTimer_Elapsed, 3.f);
+}
+
+void ACBPawn::RecenterTimer_Elapsed()
+{
+	RecenterWidgetComponent->SetVisibility(false);
+	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0, EOrientPositionSelector::OrientationAndPosition);
 }
 
 void ACBPawn::OnRecenterEnded()
 {
 	if (RecenterTimerHandle.IsValid())
 	{
+		RecenterWidgetComponent->SetVisibility(false);
 		GetWorldTimerManager().ClearTimer(RecenterTimerHandle);
 	}
 }

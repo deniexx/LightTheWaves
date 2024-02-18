@@ -3,6 +3,12 @@
 
 #include "Game/CBPlayerState.h"
 
+#include "CBBlueprintFunctionLibrary.h"
+#include "CBInitialiser.h"
+#include "LightTheWaves/LightTheWaves.h"
+
+class UCBInitialiser;
+
 void ACBPlayerState::ApplyChangeToCurrency_Implementation(int32 Delta)
 {
 	const int32 OldCurrency = Currency;
@@ -33,4 +39,13 @@ FOnAttributeChanged& ACBPlayerState::OnCurrencyChangedEvent()
 FOnAttributeChanged& ACBPlayerState::OnPointsChangedEvent()
 {
 	return OnPointsChanged;
+}
+
+void ACBPlayerState::BeginPlay()
+{
+	Super::BeginPlay();
+
+	UCBInitialiser* Initialiser = UCBBlueprintFunctionLibrary::GetInitialisationSubsystem(this);
+	UE_LOG(CBLog, Error, TEXT("Initialiser not available at BeginPlay of CBPlayerState"));
+	Initialiser->RegisterPlayerState(this);
 }

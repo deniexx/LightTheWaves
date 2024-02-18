@@ -44,7 +44,7 @@ void ACBMonsterHazard::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 {
 	if(OtherActor && IsValid(OtherActor) && OtherActor->Implements<UCBDestroyableObject>())
 	{
-		ICBDestroyableObject::Execute_OnDestroyed(OtherActor, this, EDestroyingObject::Monster);
+		ICBDestroyableObject::Execute_TakeDamage(OtherActor, this, EDestroyingObject::Monster, ICBDestroyableObject::Execute_GetMaxHealth(OtherActor));
 		Destroy();
 	}
 }
