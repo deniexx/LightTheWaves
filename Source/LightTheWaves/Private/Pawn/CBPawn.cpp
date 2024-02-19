@@ -155,6 +155,8 @@ ACBPawn::ACBPawn()
 void ACBPawn::IncreaseCapacity_Implementation(int32 IncreaseAmount)
 {
 	AmmoCapacity += IncreaseAmount;
+	OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
+	UE_LOG(CBLog, Log, TEXT("Ammo Upgrade Bought"))
 }
 
 bool ACBPawn::CanReload_Implementation()
@@ -195,8 +197,14 @@ void ACBPawn::BeginPlay()
 	}
 
 	UCBInitialiser* Initialiser = UCBBlueprintFunctionLibrary::GetInitialisationSubsystem(this);
-	UE_LOG(CBLog, Error, TEXT("Initialiser not available at BeginPlay of CBPawn"));
-	Initialiser->RegisterPlayerPawn(this);
+	if (!Initialiser)
+	{
+		UE_LOG(CBLog, Error, TEXT("Initialiser not available at BeginPlay of CBPawn"));
+	}
+	else
+	{
+		Initialiser->RegisterPlayerPawn(this);
+	}
 }
 
 // Called every frame
@@ -222,7 +230,7 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void ACBPawn::Reload_Implementation()
 {
 	Ammo = AmmoCapacity;
-	OnAmmoUpdated.Broadcast(Ammo);
+	OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
 }
 
 void ACBPawn::HookHandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp,
@@ -252,7 +260,7 @@ void ACBPawn::Shoot()
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		GetWorld()->SpawnActor<AActor>(ProjectileClass, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator(), SpawnParameters);
 		Ammo--;
-		OnAmmoUpdated.Broadcast(Ammo);
+		OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
 	}
 }
 

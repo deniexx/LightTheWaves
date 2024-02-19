@@ -5,6 +5,7 @@
 
 #include "CBInitialiser.h"
 #include "Kismet/GameplayStatics.h"
+#include "Subsystem/CBShopSubsystem.h"
 
 UCBInitialiser* UCBBlueprintFunctionLibrary::GetInitialisationSubsystem(UObject* WorldContextObject)
 {
@@ -24,4 +25,13 @@ bool UCBBlueprintFunctionLibrary::RegisterObjectForInitialisation(UObject* World
 	}
 
 	return false;
+}
+
+UCBShopSubsystem* UCBBlueprintFunctionLibrary::GetShopSubsystem(UObject* WorldContextObject)
+{
+	if (const UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(WorldContextObject))
+	{
+		return GameInstance->GetSubsystem<UCBShopSubsystem>();
+	}
+	return nullptr;
 }

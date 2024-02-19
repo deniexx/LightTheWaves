@@ -31,6 +31,15 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Attributes")
 	void ApplyChangeToPoints(int32 Delta);
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Attributes")
+	int32 GetPoints() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Attributes")
+	int32 GetCurrency() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Attributes")
+	bool HasEnoughCurrency(int32 AmountToCheck);
+
 	virtual FOnAttributeChanged& OnPointsChangedEvent() = 0;
 	virtual FOnAttributeChanged& OnCurrencyChangedEvent() = 0;
 };
