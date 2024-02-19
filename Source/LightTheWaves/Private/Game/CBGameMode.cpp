@@ -39,8 +39,14 @@ void ACBGameMode::BeginPlay()
 	UGameplayStatics::GetAllActorsWithTag(this, FName("Path"), PathActors);
 	
 	UCBInitialiser* Initialiser = UCBBlueprintFunctionLibrary::GetInitialisationSubsystem(this);
-	UE_LOG(CBLog, Error, TEXT("Initialiser not available at BeginPlay of CBGameMode"));
-	Initialiser->RegisterGameMode(this);
+	if (!Initialiser)
+	{
+		UE_LOG(CBLog, Error, TEXT("Initialiser not available at BeginPlay of CBGameMode"));
+	}
+	else
+	{
+		Initialiser->RegisterGameMode(this);
+	}
 }
 
 void ACBGameMode::TestGameplay()

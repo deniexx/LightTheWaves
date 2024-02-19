@@ -16,7 +16,7 @@ class UPhysicsConstraintComponent;
 class UXRDeviceVisualizationComponent;
 class UMotionControllerComponent;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAmmoUpdated, int32, NewAmmoCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoUpdated, int32, NewAmmoCount, int32, MaxAmmo);
 
 UCLASS()
 class LIGHTTHEWAVES_API ACBPawn : public APawn, public ICBGunInterface

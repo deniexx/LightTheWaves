@@ -6,6 +6,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CBBlueprintFunctionLibrary.generated.h"
 
+class UCBShopSubsystem;
 class UCBInitialiser;
 /**
  * 
@@ -32,4 +33,12 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
 	static bool RegisterObjectForInitialisation(UObject* WorldContextObject, UObject* ObjectToRegister);
+
+	/**
+	 * Gets the Shop Subsystem
+	 * @param WorldContextObject The world context object, used to get the world
+	 * @return The Initialisation Subsystem, can be nullptr
+	 */
+	UFUNCTION(BlueprintCallable, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
+	static UCBShopSubsystem* GetShopSubsystem(UObject* WorldContextObject);
 };
