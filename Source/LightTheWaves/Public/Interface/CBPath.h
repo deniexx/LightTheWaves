@@ -31,12 +31,6 @@ public:
 	int32 GetNumberOfBoatsOnPath();
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Path")
-	int32 GetNumberOfMonstersOnPath();
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Path")
-	void AddMonsterToPath(AActor* Monster);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Path")
 	void RegisterBoatOnPath(AActor* Boat);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Path")

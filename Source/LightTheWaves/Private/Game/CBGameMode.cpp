@@ -6,9 +6,8 @@
 #include "CBBlueprintFunctionLibrary.h"
 #include "CBInitialiser.h"
 #include "Actor/CBBoat.h"
+#include "Async/CBMonsterSpawnerAction.h"
 #include "Components/SplineComponent.h"
-#include "EnvironmentQuery/EnvQueryInstanceBlueprintWrapper.h"
-#include "EnvironmentQuery/EnvQueryManager.h"
 #include "Interface/CBPath.h"
 #include "Kismet/GameplayStatics.h"
 #include "LightTheWaves/LightTheWaves.h"
@@ -113,6 +112,17 @@ void ACBGameMode::SpawnBoat_TimerElapsed()
 	ProcessBoatSpawning();
 }
 
+void ACBGameMode::OnBoatDestroyed(AActor* DestroyedBoat)
+{
+	if (DestroyedBoat)
+	{
+		Boats.Remove(DestroyedBoat);
+		return;
+	}
+	
+	Boats.RemoveAll([=](const AActor* Actor) { return Actor == nullptr; });
+}
+
 void ACBGameMode::ProcessMonsterSpawning()
 {
 	float MonsterSpawnPeriod;
@@ -131,72 +141,32 @@ void ACBGameMode::ProcessMonsterSpawning()
 	}
 
 	MonsterSpawnPeriod += + FMath::FRandRange(MonsterSpawningSettings.MinTimeVariation, MonsterSpawningSettings.MaxTimeVariation);
-	GetWorldTimerManager().SetTimer(MonsterSpawnTimerHandle, this, &ThisClass::RunMonsterSpawnEQS, MonsterSpawnPeriod, false);
+	GetWorldTimerManager().SetTimer(MonsterSpawnTimerHandle, this, &ThisClass::SpawnMonster, MonsterSpawnPeriod, false);
 }
 
-void ACBGameMode::RunMonsterSpawnEQS()
+void ACBGameMode::SpawnMonster()
 {
-	UEnvQueryInstanceBlueprintWrapper* QueryInstance = UEnvQueryManager::RunEQSQuery(this, MonsterSpawnQuery, this, EEnvQueryRunMode::RandomBest25Pct, nullptr);
-
-	if (ensure(QueryInstance))
-	{
-		QueryInstance->GetOnQueryFinishedEvent().AddDynamic(this, &ThisClass::SpawnMonster);
-	}
+	UCBMonsterSpawnerAction* MonsterSpawnerAction = UCBMonsterSpawnerAction::Create(this, Boats, Monsters, PathActors, MonsterSpawningSettings.SpawnParams);
+	MonsterSpawnerAction->OnMonsterSpawned.AddDynamic(this, &ThisClass::OnMonsterSpawned);
+	MonsterSpawnerAction->Activate();
+	ProcessMonsterSpawning();
 }
 
-void ACBGameMode::SpawnMonster(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus)
+void ACBGameMode::OnMonsterSpawned(AActor* SpawnedMonster)
 {
-	if (QueryStatus != EEnvQueryStatus::Success)
+	SpawnedMonster->OnDestroyed.AddDynamic(this, &ThisClass::OnMonsterDestroyed);
+	Monsters.Add(SpawnedMonster);
+}
+
+void ACBGameMode::OnMonsterDestroyed(AActor* DestroyedMonster)
+{
+	if (DestroyedMonster)
 	{
-		UE_LOG(CBLog, Warning, TEXT("Monster Spawn Query Failed!"));
-		ProcessMonsterSpawning();
+		Monsters.Remove(DestroyedMonster);
 		return;
 	}
-
-	const bool bShowDebug = CVarDrawDebugMonsterSpawn.GetValueOnAnyThread() > 0;
-	const TArray<FVector> Locations = QueryInstance->GetResultsAsLocations();
-	if (Locations.Num() > 0)
-	{
-		const FVector RandomLocation = Locations[FMath::RandRange(0, Locations.Num() - 1)];
-		USplineComponent* ClosestSpline;
-		AActor* SplineActor = GetSplineClosestToLocation(RandomLocation, ClosestSpline);
-		FVector SpawnLocation = ClosestSpline->FindLocationClosestToWorldLocation(RandomLocation, ESplineCoordinateSpace::World);
-		const float XOffset = FMath::FRandRange(-MonsterSpawningSettings.MaxRadiusForLocationOffset, MonsterSpawningSettings.MaxRadiusForLocationOffset);
-		const float YOffset = FMath::FRandRange(-MonsterSpawningSettings.MaxRadiusForLocationOffset, MonsterSpawningSettings.MaxRadiusForLocationOffset);
-		SpawnLocation += FVector(XOffset, YOffset, 0.f);
-
-		if (bShowDebug)
-		{
-			DrawDebugString(GetWorld(), RandomLocation, TEXT("Random Location"), nullptr, FColor::White, 1.5f);
-			DrawDebugSphere(GetWorld(), RandomLocation, 32, 12, FColor::Red, true, 1.5f);
-			DrawDebugString(GetWorld(), RandomLocation, TEXT("Spline Corrected Location"), nullptr, FColor::White, 1.5f);
-			DrawDebugSphere(GetWorld(), SpawnLocation, 32, 12, FColor::Blue, true, 1.5f);
-		}
-		
-		const float DistanceToStart = (SpawnLocation - ClosestSpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World)).Length();
-		if (DistanceToStart < MonsterSpawningSettings.MinimumDistanceFromPathStart)
-		{
-			UE_LOG(CBLog, Log, TEXT("Location found too close to start, skipping spawning."));
-			ProcessMonsterSpawning();
-			return;
-		}
-		
-
-		const float MonstersOnChosenPath = ICBPath::Execute_GetNumberOfMonstersOnPath(SplineActor);
-		if (MonstersOnChosenPath >= GetMaxAllowedMonstersOnPath(SplineActor))
-		{
-			UE_LOG(CBLog, Log, TEXT("Too many monsters on path, skipping spawning."));
-			ProcessMonsterSpawning();
-			return;
-		}
-
-		// @NOTE: Might be worth to check if the path has a current boat(if prediction is added a future boat incoming)
-		FActorSpawnParameters SpawnParameters;
-		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		AActor* NewMonster = GetWorld()->SpawnActor<AActor>(MonsterSpawningSettings.MonsterClass, SpawnLocation, FRotator::ZeroRotator, SpawnParameters);
-		ICBPath::Execute_AddMonsterToPath(SplineActor, NewMonster);
-		ProcessMonsterSpawning();
-	}
+	
+	Monsters.RemoveAll([=](const AActor* Actor) { return Actor == nullptr; });
 }
 
 float ACBGameMode::GetBoatSpawnPeriod()
@@ -231,6 +201,8 @@ void ACBGameMode::SpawnBoat(AActor* PathActor)
 	AActor* Boat = GetWorld()->SpawnActor<AActor>(GetRandomSpawnableBoat(), SpawnParameters);
 	if (Boat)
 	{
+		Boats.Add(Boat);
+		Boat->OnDestroyed.AddDynamic(this, &ThisClass::OnBoatDestroyed);
 		ICBPathingActor::Execute_SetPath(Boat, ICBPath::Execute_GetPath(PathActor));
 		ICBPath::Execute_RegisterBoatOnPath(PathActor, Boat);
 	}
@@ -278,13 +250,6 @@ bool ACBGameMode::TrySpawnBoat()
 
 bool ACBGameMode::IsAtMaxBoats()
 {
-	int32 Boats = 0;
-
-	for (AActor* Actor : PathActors)
-	{
-		Boats += ICBPath::Execute_GetNumberOfBoatsOnPath(Actor);
-	}
-
 	float Start = BoatSpawningSettings.MaxBoats.Last().X;
 	float End = BoatSpawningSettings.MaxBoats.Last().Y;
 	if (BoatSpawningSettings.MaxBoats.Num() >= WaveNumber)
@@ -295,7 +260,7 @@ bool ACBGameMode::IsAtMaxBoats()
 	const float MaxBoatsAllowed = FMath::Lerp(Start, End, GetPercentRoundTimeElapsed());
 	const int32 MaxBoatsAllowedInt = FMath::RoundToInt32(MaxBoatsAllowed * 100.f) * 0.01f;
 	
-	return Boats >= MaxBoatsAllowedInt;
+	return Boats.Num() >= MaxBoatsAllowedInt;
 }
 
 void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
@@ -381,26 +346,6 @@ void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
 	ProcessBossSpawning();
 }
 
-int32 ACBGameMode::GetMaxAllowedMonstersOnPath(AActor* Path)
-{
-	if (MonsterSpawningSettings.bUseBoatsAsForMaxMonsterOnPath)
-	{
-		return ICBPath::Execute_GetNumberOfBoatsOnPath(Path) + MonsterSpawningSettings.AdditionalMaxMonstersPerPath;
-	}
-
-	if (MonsterSpawningSettings.bUseCurveForMaxMonstersOnPath)
-	{
-		return MonsterSpawningSettings.MaxMonstersOnPathCurve.Eval(GetPercentRoundTimeElapsed(), "");
-	}
-
-	if (WaveNumber >= MonsterSpawningSettings.MaxMonstersOnPath.Num())
-	{
-		MonsterSpawningSettings.MaxMonstersOnPath.Last();
-	}
-
-	return MonsterSpawningSettings.MaxMonstersOnPath[WaveNumber - 1];
-}
-
 float ACBGameMode::GetRoundTimeElapsed() const
 {
 	if (WaveTimerHandle.IsValid())
@@ -419,6 +364,12 @@ float ACBGameMode::GetPercentRoundTimeElapsed() const
 	}
 
 	return 0.f;
+}
+
+TSubclassOf<AActor> ACBGameMode::GetRandomSpawnableBoat()
+{
+	// @TODO: Expand this function to be able to evaluate randomization weights, etc...
+	return BoatSpawningSettings.SpawnableBoatClasses[FMath::RandRange(0, BoatSpawningSettings.SpawnableBoatClasses.Num() - 1)];
 }
 
 bool ACBGameMode::IsAnyPathFree(int32 MaxBoatsPerPath, AActor*& OutPath)
@@ -451,12 +402,6 @@ bool ACBGameMode::IsAnyPathFree(int32 MaxBoatsPerPath, AActor*& OutPath)
 	// Grab a random free path, that way we don't just go in sequence
 	OutPath = FreePaths[FMath::RandRange(0, FreePaths.Num() - 1)];
 	return true;
-}
-
-TSubclassOf<AActor> ACBGameMode::GetRandomSpawnableBoat()
-{
-	// @TODO: Expand this function to be able to evaluate randomization weights, etc...
-	return BoatSpawningSettings.SpawnableBoatClasses[FMath::RandRange(0, BoatSpawningSettings.SpawnableBoatClasses.Num() - 1)];
 }
 
 AActor* ACBGameMode::GetRandomSpline(USplineComponent*& OutSplineComponent)

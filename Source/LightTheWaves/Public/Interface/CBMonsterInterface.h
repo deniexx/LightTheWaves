@@ -26,4 +26,13 @@ class LIGHTTHEWAVES_API ICBMonsterInterface
 public:
 
 	virtual FOnMonsterDead& OnMonsterDeadEvent() = 0;
+
+	UFUNCTION(BlueprintNativeEvent, Category = "MonsterInterface")
+	AActor* GetTarget();
+
+	UFUNCTION(BlueprintNativeEvent, Category = "MonsterInterface")
+	bool IsTargeting() const;
+
+	UFUNCTION(BlueprintNativeEvent, Category = "MonsterInterface")
+	void SetTarget(AActor* InTarget);
 };

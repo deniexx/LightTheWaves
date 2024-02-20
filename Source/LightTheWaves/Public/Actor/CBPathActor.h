@@ -20,8 +20,6 @@ public:
 	virtual USplineComponent* GetPath_Implementation() override;
 	virtual int32 GetNumberOfBoatsOnPath_Implementation() override;
 	virtual void RegisterBoatOnPath_Implementation(AActor* Boat) override;
-	virtual int32 GetNumberOfMonstersOnPath_Implementation() override;
-	virtual void AddMonsterToPath_Implementation(AActor* Monster) override;
 	virtual bool IsBoatWithinDistanceFromStart_Implementation(float Distance) override;
 	/** End CBPath interface */
 
@@ -31,9 +29,6 @@ protected:
 	
 	UFUNCTION()
 	void OnPathingActorLeftPath(AActor* PathingActor);
-
-	UFUNCTION()
-	void OnMonsterDead(AActor* Actor);
 
 	void CleanArray();
 
