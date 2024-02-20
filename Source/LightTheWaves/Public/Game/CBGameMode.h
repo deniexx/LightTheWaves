@@ -4,14 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Engine/CurveTable.h"
-#include "EnvironmentQuery/EnvQueryInstanceBlueprintWrapper.h"
 #include "Interface/CBPathProvider.h"
 #include "GameFramework/GameModeBase.h"
 #include "Interface/CBWaveDirector.h"
 #include "FMonsterSpawnerSettings.h"
 #include "CBGameMode.generated.h"
-
-class UEnvQuery;
 
 USTRUCT(BlueprintType)
 struct FBoatSpawningSettings
@@ -165,10 +162,6 @@ protected:
 	/** The settings that will be used when spawning monsters */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	FMonsterSpawningSettings MonsterSpawningSettings;
-
-	/** The environment query that will be used to find monster spawn locations */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
-	TObjectPtr<UEnvQuery> MonsterSpawnQuery;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
 	FBossSpawningSettings BossSpawningSettings;
