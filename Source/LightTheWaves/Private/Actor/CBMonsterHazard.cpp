@@ -3,7 +3,9 @@
 
 #include "Actor/CBMonsterHazard.h"
 
+#include "Components/SplineComponent.h"
 #include "Interface/CBDestroyableObject.h"
+#include "Interface/CBPathingActor.h"
 
 // Sets default values
 ACBMonsterHazard::ACBMonsterHazard()
@@ -43,7 +45,41 @@ bool ACBMonsterHazard::IsTargeting_Implementation() const
 
 void ACBMonsterHazard::SetTarget_Implementation(AActor* InTarget)
 {
-	Target = InTarget;
+	if (InTarget)
+	{
+		Target = InTarget;
+		Cast<ICBPathingActor>(Target)->NewPathChosenEvent().AddDynamic(this, &ThisClass::OnNewPathChosen);
+	}
+	
+	SetLifeSpan(5.f);
+}
+
+void ACBMonsterHazard::OnNewPathChosen(USplineComponent* NewPath)
+{
+	if (TimesFollowedBoat < ChancesToFollowBoat.Num())
+	{
+		const int32 Chance = ChancesToFollowBoat[TimesFollowedBoat];
+		const int32 DiceRoll = FMath::RandRange(0, 99);
+
+		if (DiceRoll < Chance)
+		{
+			const FVector BoatDestination = NewPath->GetWorldLocationAtSplinePoint(NewPath->GetNumberOfSplinePoints() - 1);
+			const float InputKey = NewPath->FindInputKeyClosestToWorldLocation(Target->GetActorLocation());
+			const float DistanceAlongSpline = NewPath->GetDistanceAlongSplineAtSplineInputKey(InputKey);
+			const float OffsetDistance = DistanceAlongSpline + FMath::FRandRange(MinMaxFollowDistanceFromBoat.X, MinMaxFollowDistanceFromBoat.Y);
+			const FVector NewLocation = NewPath->GetWorldLocationAtDistanceAlongSpline(OffsetDistance);
+
+			if ((BoatDestination - NewLocation).Length() < MinDistanceToEnd)
+			{
+				// @NOTE: Maybe adjust location of monster here
+				return;
+			}
+			
+			SetActorLocation(NewLocation);
+		}
+		
+		++TimesFollowedBoat;
+	}
 }
 
 void ACBMonsterHazard::PostInitializeComponents()

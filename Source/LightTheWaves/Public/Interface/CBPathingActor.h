@@ -9,6 +9,7 @@
 class USplineComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPathingActorLeftPath, AActor*, PathingActor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNewPathChosen, USplineComponent*, NewPath);
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -34,4 +35,6 @@ public:
 	USplineComponent* GetPath();	
 	
 	virtual FOnPathingActorLeftPath& PathingActorLeftPathEvent() = 0;
+
+	virtual FOnNewPathChosen& NewPathChosenEvent() = 0;
 };

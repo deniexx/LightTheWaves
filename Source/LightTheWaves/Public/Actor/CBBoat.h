@@ -33,6 +33,7 @@ public:
 	/** Pathing Actor Interface */
 	virtual void SetPath_Implementation(USplineComponent* NewPath) override;
 	virtual FOnPathingActorLeftPath& PathingActorLeftPathEvent() override;
+	virtual FOnNewPathChosen& NewPathChosenEvent() override;
 	virtual USplineComponent* GetPath_Implementation() override;
 	/** End Pathing Actor Interface */
 	
@@ -137,6 +138,9 @@ protected:
 	float RegeneratePathDelay = 0.1;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float RedrawInstancedMeshDelay = 0.2f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TObjectPtr<UStaticMesh> BoatPathingVisMesh;
 	
 	/** The debris actor to be spawned when the boat has been destroyed */
@@ -149,6 +153,9 @@ protected:
 	UPROPERTY(BlueprintAssignable, Category = "Boat Properties")
 	FOnPathingActorLeftPath OnPathingActorLeftPath;
 
+	UPROPERTY(BlueprintAssignable, Category = "Boat Properties")
+	FOnNewPathChosen OnNewPathChosen;
+
 	void Die(EDestroyingObject DestroyingObject);
 
 private:
@@ -158,6 +165,9 @@ private:
 
 	UPROPERTY()
 	FTimerHandle RegeneratePathTimerHandle;
+
+	UPROPERTY()
+	FTimerHandle RedrawInstancedMeshTimerHandle;
 
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent> FollowTarget;
@@ -188,8 +198,9 @@ private:
 
 	UFUNCTION()
 	void RegeneratePath_Elapsed();
-	
-	void AddInstancedMeshesForPathVis() const;
+
+	UFUNCTION()
+	void AddInstancedMeshesForPathVis();
 	
 	FORCEINLINE bool IsFollowingLight() const { return CurrentPathingState == EBoatPathingState::FollowingLight; }
 	FORCEINLINE bool IsFollowingPath() const { return CurrentPathingState == EBoatPathingState::FollowingPath; }

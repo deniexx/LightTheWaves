@@ -70,7 +70,7 @@ void UCBMonsterSpawnerAction::AttemptSpawn()
 		return;
 	}
 
-	if (Boats.Num() + 1 >= Monsters.Num())
+	if ( Monsters.Num() >= Boats.Num() + 1)
 	{
 		UE_LOG(CBLog, Warning, TEXT("No boats, skipping monster spawn!"));
 		return;
@@ -93,8 +93,7 @@ void UCBMonsterSpawnerAction::AttemptSpawn()
 	else if (Boats.Num() + 1 > Monsters.Num())
 	{
 		UE_LOG(CBLog, Warning, TEXT("Target not found, but will spawn through boat numbers"));
-		// We have more boats(+additional) than monsters, so we can spawn a monster on a random location along a spline
-		// @TODO: Not sure if we need this
+		// @NOTE: Not sure if we need this
 	}
 
 	UE_LOG(CBLog, Warning, TEXT("Failing Spawn, because of no target and numbers"));
@@ -117,9 +116,11 @@ void UCBMonsterSpawnerAction::SpawnMonster(const FVector& Vector, AActor* Target
 	// Add a random rotation to the monster, might have to remove this?
 	UE_LOG(CBLog, Log, TEXT("Spawning Monster"));
 	const FRotator SpawnRotation = FRotator(0.f, FMath::FRandRange(0.f, 359.f), 0.f);
-	AActor* NewMonster = GetWorld()->SpawnActor<AActor>(SpawnerParams.MonsterClass, Vector, SpawnRotation, SpawnParameters);
-	ICBMonsterInterface::Execute_SetTarget(NewMonster, Target);
-	OnMonsterSpawned.Broadcast(NewMonster);
+	if (AActor* NewMonster = GetWorld()->SpawnActor<AActor>(SpawnerParams.MonsterClass, Vector, SpawnRotation, SpawnParameters))
+	{
+		ICBMonsterInterface::Execute_SetTarget(NewMonster, Target);
+		OnMonsterSpawned.Broadcast(NewMonster);
+	}
 }
 
 AActor* UCBMonsterSpawnerAction::ChooseTarget()
@@ -166,7 +167,7 @@ bool UCBMonsterSpawnerAction::FindDesirableSpawnLocationAroundTarget(AActor* Act
 			return false;
 		}
 	}
-	
+	CloseActor = nullptr;
 	if (AnyBoatCloseToLocation(OutLocation, SpawnerParams.MinDistanceToNonTargetBoat, CloseActor))
 	{
 		// There is another boat that is close to our desired location so try to adjust, if not possible ignore this target and try with another one
@@ -210,13 +211,13 @@ bool UCBMonsterSpawnerAction::AttemptAdjustSpawnLocationForMonster(FVector& Loca
 		Location = SplineLocationWay1;
 		return true;
 	}
-	if ((SplineLocationWay2 - Location).Length() < SpawnerParams.MinDistanceBetweenMonsters)
+	if ((SplineLocationWay2 - Location).Length() > SpawnerParams.MinDistanceBetweenMonsters)
 	{
 		// Location adjusted successfully
 		Location = SplineLocationWay2;
 		return true;
 	}
-
+	
 	return false;
 }
 

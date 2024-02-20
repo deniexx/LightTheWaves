@@ -8,6 +8,8 @@
 #include "Interface/CBMonsterInterface.h"
 #include "CBMonsterHazard.generated.h"
 
+class USplineComponent;
+
 UCLASS()
 class LIGHTTHEWAVES_API ACBMonsterHazard : public AActor, public ICBMonsterInterface
 {
@@ -33,12 +35,27 @@ protected:
 	UFUNCTION()
 	void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	UFUNCTION()
+	void OnNewPathChosen(USplineComponent* NewPath);
+
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> MonsterMesh;
 
 	/** How long should the monster stay on the field */
-	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	UPROPERTY(EditDefaultsOnly, Category = "Monster Props")
 	float LifeSpan = 60.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Monster Props")
+	TArray<int32> ChancesToFollowBoat;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Monster Props")
+	FVector2D MinMaxFollowDistanceFromBoat;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Monster Props")
+	float MinDistanceToEnd = 600.f;
+	
+	UPROPERTY()
+	int32 TimesFollowedBoat = 0;
 	
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UCapsuleComponent> CapsuleTrigger;
@@ -49,5 +66,4 @@ protected:
 	UPROPERTY(BlueprintAssignable)
 	FOnMonsterDead OnMonsterDead;
 	
-
 };
