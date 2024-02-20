@@ -114,16 +114,18 @@ void ACBBoat::ReturnToPath(float DeltaTime)
 {
 	if (ReturnToPathPoints.Num() <= 0)
 	{
-		const FVector DirectionOnSpline = CurrentPath->FindDirectionClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
 		const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
-		const FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
-		const FVector ForwardLookLocation = ClosestSplinePoint + (DirectionOnSpline * ReturnToPathForwardLook);
-		FVector DesiredLocation = CurrentPath->FindLocationClosestToWorldLocation(ForwardLookLocation, ESplineCoordinateSpace::World);
+		//const FVector DirectionOnSpline = CurrentPath->FindDirectionClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
+		//const FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
+		//const FVector ForwardLookLocation = ClosestSplinePoint + (DirectionOnSpline * ReturnToPathForwardLook);
+		//FVector DesiredLocation = CurrentPath->FindLocationClosestToWorldLocation(ForwardLookLocation, ESplineCoordinateSpace::World);
+		//DesiredLocation.Z = GetActorLocation().Z;
+		FVector DesiredLocation = CurrentPath->GetLocationAtSplinePoint(CurrentPath->GetNumberOfSplinePoints() - 1, ESplineCoordinateSpace::World);
 		DesiredLocation.Z = GetActorLocation().Z;
-
+		
 		if (bDrawDebug)
 		{
-			DrawDebugSphere(GetWorld(), ForwardLookLocation, 8, 8, FColor::Yellow, false, 5);
+			//DrawDebugSphere(GetWorld(), ForwardLookLocation, 8, 8, FColor::Yellow, false, 5);
 			DrawDebugSphere(GetWorld(), DesiredLocation, 8, 8, FColor::Yellow, false, 5);
 		}
 		if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), DesiredLocation))
@@ -137,7 +139,12 @@ void ACBBoat::ReturnToPath(float DeltaTime)
 			BoatPathingVisSpline->ClearSplinePoints();
 			for (const auto& Point : ReturnToPathPoints)
 			{
-				BoatPathingVisSpline->AddSplinePoint(FVector(Point.X, Point.Y, ActorZ), ESplineCoordinateSpace::World);
+				const FVector TargetPoint = FVector(Point.X, Point.Y, ActorZ);
+				BoatPathingVisSpline->AddSplinePoint(TargetPoint, ESplineCoordinateSpace::World);
+				if (bDrawDebug)
+				{
+					DrawDebugSphere(GetWorld(), TargetPoint, 8, 8, FColor::Yellow, false, 5);
+				}
 			}
 
 			AddInstancedMeshesForPathVis();
