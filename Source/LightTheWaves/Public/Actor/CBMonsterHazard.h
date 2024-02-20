@@ -18,8 +18,14 @@ public:
 	ACBMonsterHazard();
 
 	virtual void Destroyed() override;
-	virtual FOnMonsterDead& OnMonsterDeadEvent() override;
 
+	/** Monster Interface */
+	virtual FOnMonsterDead& OnMonsterDeadEvent() override;
+	virtual AActor* GetTarget_Implementation() override;
+	virtual bool IsTargeting_Implementation() const override;
+	virtual void SetTarget_Implementation(AActor* InTarget) override;
+	/** End Monster Interface */
+	
 	virtual void PostInitializeComponents() override;
 
 protected:
@@ -36,6 +42,9 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UCapsuleComponent> CapsuleTrigger;
+
+	UPROPERTY()
+	AActor* Target;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnMonsterDead OnMonsterDead;

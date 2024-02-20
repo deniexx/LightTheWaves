@@ -17,7 +17,6 @@ enum class EBoatPathingState : uint8
 {
 	FollowingPath,
 	FollowingLight,
-	ReturningToPath,
 
 	None UMETA( Hidden )
 };
@@ -34,6 +33,7 @@ public:
 	/** Pathing Actor Interface */
 	virtual void SetPath_Implementation(USplineComponent* NewPath) override;
 	virtual FOnPathingActorLeftPath& PathingActorLeftPathEvent() override;
+	virtual USplineComponent* GetPath_Implementation() override;
 	/** End Pathing Actor Interface */
 	
 	/** Light Interactor interface */
@@ -89,8 +89,9 @@ protected:
 	
 	UPROPERTY()
 	TArray<FVector> ReturnToPathPoints;
-	
-	FVector LastFrameLocation;
+
+	UPROPERTY()
+	TObjectPtr<USplineComponent> TargetSpline;
 
 	uint32 PointIndex = 0;
 
@@ -133,7 +134,7 @@ protected:
 	float RotationRate = 150.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
-	float ScanDelayCheckClosestPath = 0.1;
+	float RegeneratePathDelay = 0.1;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TObjectPtr<UStaticMesh> BoatPathingVisMesh;
@@ -156,7 +157,7 @@ private:
 	EBoatPathingState CurrentPathingState = EBoatPathingState::None;
 
 	UPROPERTY()
-	FTimerHandle CheckClosestPathTimerHandle;
+	FTimerHandle RegeneratePathTimerHandle;
 
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent> FollowTarget;
@@ -172,7 +173,7 @@ private:
 
 	void FollowLight(float DeltaTime);
 	void FollowPath(float DeltaTime);
-	void ReturnToPath(float DeltaTime);
+	void GenerateNewPath();
 
 	void SetState(EBoatPathingState NewState);
 
@@ -186,13 +187,12 @@ private:
 	EBoatPathingState EvaluateStatePostFollowLight();
 
 	UFUNCTION()
-	void CheckClosestPath_Elapsed();
+	void RegeneratePath_Elapsed();
 	
 	void AddInstancedMeshesForPathVis() const;
 	
 	FORCEINLINE bool IsFollowingLight() const { return CurrentPathingState == EBoatPathingState::FollowingLight; }
 	FORCEINLINE bool IsFollowingPath() const { return CurrentPathingState == EBoatPathingState::FollowingPath; }
-	FORCEINLINE bool IsReturningToPath() const { return CurrentPathingState == EBoatPathingState::ReturningToPath; }
 	FORCEINLINE bool IsNotFollowingLight() const { return CurrentPathingState != EBoatPathingState::FollowingLight; }
 
 	float Health;

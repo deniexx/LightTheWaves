@@ -37,8 +37,8 @@ ACBBoat::ACBBoat()
 	BoatMesh->SetupAttachment(GetRootComponent());
 	DebrisSpawnLocation->SetupAttachment(GetRootComponent());
 	BoatPathingVis->SetupAttachment(BoatPathingVisSpline);
-	
-	CurrentPathingState = EBoatPathingState::ReturningToPath;
+
+	CurrentPathingState = EBoatPathingState::None;
 }
 
 void ACBBoat::BeginPlay()
@@ -61,10 +61,6 @@ void ACBBoat::Tick(float DeltaTime)
 	{
 		FollowPath(DeltaTime);
 	}
-	else if (IsReturningToPath())
-	{
-		ReturnToPath(DeltaTime);
-	}
 
 	OrientRotationToMovement(DeltaTime);
 	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
@@ -77,11 +73,6 @@ void ACBBoat::Tick(float DeltaTime)
 void ACBBoat::SetState(EBoatPathingState NewState)
 {
 	CurrentPathingState = NewState;
-
-	if (NewState != EBoatPathingState::ReturningToPath)
-	{
-		BoatPathingVis->SetVisibility(false);
-	}
 }
 
 void ACBBoat::FollowLight(float DeltaTime)
@@ -110,58 +101,42 @@ void ACBBoat::FollowPath(float DeltaTime)
 	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
 }
 
-void ACBBoat::ReturnToPath(float DeltaTime)
+void ACBBoat::GenerateNewPath()
 {
-	if (ReturnToPathPoints.Num() <= 0)
+	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
+	if (!TargetSpline)
 	{
-		const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
-		//const FVector DirectionOnSpline = CurrentPath->FindDirectionClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
-		//const FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
-		//const FVector ForwardLookLocation = ClosestSplinePoint + (DirectionOnSpline * ReturnToPathForwardLook);
-		//FVector DesiredLocation = CurrentPath->FindLocationClosestToWorldLocation(ForwardLookLocation, ESplineCoordinateSpace::World);
-		//DesiredLocation.Z = GetActorLocation().Z;
-		FVector DesiredLocation = CurrentPath->GetLocationAtSplinePoint(CurrentPath->GetNumberOfSplinePoints() - 1, ESplineCoordinateSpace::World);
-		DesiredLocation.Z = GetActorLocation().Z;
-		
-		if (bDrawDebug)
-		{
-			//DrawDebugSphere(GetWorld(), ForwardLookLocation, 8, 8, FColor::Yellow, false, 5);
-			DrawDebugSphere(GetWorld(), DesiredLocation, 8, 8, FColor::Yellow, false, 5);
-		}
-		if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), DesiredLocation))
-		{
-			ReturnToPathPoints = MoveTemp(NavPath->PathPoints);
-			PointIndex = 0;
-			CachedDestination = ReturnToPathPoints[ReturnToPathPoints.Num() - 1];
-			const float ActorZ = GetActorLocation().Z;
-			CachedDestination.Z = ActorZ;
-
-			BoatPathingVisSpline->ClearSplinePoints();
-			for (const auto& Point : ReturnToPathPoints)
-			{
-				const FVector TargetPoint = FVector(Point.X, Point.Y, ActorZ);
-				BoatPathingVisSpline->AddSplinePoint(TargetPoint, ESplineCoordinateSpace::World);
-				if (bDrawDebug)
-				{
-					DrawDebugSphere(GetWorld(), TargetPoint, 8, 8, FColor::Yellow, false, 5);
-				}
-			}
-
-			AddInstancedMeshesForPathVis();
-		}
+		TargetSpline = ICBPathProvider::Execute_GetClosestPath(GetWorld()->GetAuthGameMode(), this);
 	}
+	FVector DesiredLocation = TargetSpline->GetLocationAtSplinePoint(TargetSpline->GetNumberOfSplinePoints() - 1, ESplineCoordinateSpace::World);
+	DesiredLocation.Z = GetActorLocation().Z;
 	
-	if ((GetActorLocation() - CachedDestination).Length() < 5.f)
+	if (bDrawDebug)
 	{
-		SetState(EBoatPathingState::FollowingPath);
-		ReturnToPathPoints.Empty();
-		return;
+		DrawDebugSphere(GetWorld(), DesiredLocation, 8, 8, FColor::Yellow, false, 5);
 	}
+	if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), DesiredLocation))
+	{
+		ReturnToPathPoints = MoveTemp(NavPath->PathPoints);
+		PointIndex = 0;
+		CachedDestination = ReturnToPathPoints[ReturnToPathPoints.Num() - 1];
+		const float ActorZ = GetActorLocation().Z;
+		CachedDestination.Z = ActorZ;
 
-	const FVector LocationOnSpline = BoatPathingVisSpline->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
-	MovementDirection = BoatPathingVisSpline->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
-	MovementDirection.Z = 0;
-	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
+		BoatPathingVisSpline->ClearSplinePoints();
+		for (const auto& Point : ReturnToPathPoints)
+		{
+			const FVector TargetPoint = FVector(Point.X, Point.Y, ActorZ);
+			BoatPathingVisSpline->AddSplinePoint(TargetPoint, ESplineCoordinateSpace::World);
+			if (bDrawDebug)
+			{
+				DrawDebugSphere(GetWorld(), TargetPoint, 8, 8, FColor::Yellow, false, 5);
+			}
+		}
+		CurrentPath = BoatPathingVisSpline;
+
+		AddInstancedMeshesForPathVis();
+	}
 }
 
 void ACBBoat::OrientRotationToMovement(float DeltaTime)
@@ -209,6 +184,11 @@ FOnPathingActorLeftPath& ACBBoat::PathingActorLeftPathEvent()
 	return OnPathingActorLeftPath;
 }
 
+USplineComponent* ACBBoat::GetPath_Implementation()
+{
+	return CurrentPath;
+}
+
 void ACBBoat::OnLightFocused_Implementation(UPrimitiveComponent* TargetComponent)
 {
 	if (IsFollowingLight())
@@ -220,10 +200,11 @@ void ACBBoat::OnLightFocused_Implementation(UPrimitiveComponent* TargetComponent
 	FollowTarget = TargetComponent;
 	SetState(EBoatPathingState::FollowingLight);
 	ReturnToPathPoints.Empty();
+	OnPathingActorLeftPath.Broadcast(this);
 
-	if (!CheckClosestPathTimerHandle.IsValid())
+	if (!RegeneratePathTimerHandle.IsValid())
 	{
-		GetWorldTimerManager().SetTimer(CheckClosestPathTimerHandle, this, &ThisClass::CheckClosestPath_Elapsed, ScanDelayCheckClosestPath, true);
+		GetWorldTimerManager().SetTimer(RegeneratePathTimerHandle, this, &ThisClass::RegeneratePath_Elapsed, RegeneratePathDelay, true);
 	}
 }
 
@@ -238,8 +219,6 @@ void ACBBoat::OnLightFocusEnd_Implementation()
 	ReturnToPathPoints.Empty();
 	FollowTarget = nullptr;
 	SetState(EvaluateStatePostFollowLight());
-
-	GetWorldTimerManager().ClearTimer(CheckClosestPathTimerHandle);
 }
 
 void ACBBoat::TakeDamage_Implementation(AActor* InstigatorActor, EDestroyingObject DestroyingObject, float IncomingDamage)
@@ -308,30 +287,27 @@ EBoatPathingState ACBBoat::EvaluateStatePostFollowLight()
 	USplineComponent* SplineComponent = ICBPathProvider::Execute_GetClosestPath(GetWorld()->GetAuthGameMode(), this);
 	if (SplineComponent != CurrentPath)
 	{
-		OnPathingActorLeftPath.Broadcast(this);
+		BoatPathingVis->SetVisibility(false);
 		CurrentPath = SplineComponent;
 		ICBPathProvider::Execute_RegisterPathingActorWithPath(GetWorld()->GetAuthGameMode(), this, SplineComponent);
+		GetWorldTimerManager().ClearTimer(RegeneratePathTimerHandle);
 	}
-
+	
 	const FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
 	const float DistanceToClosestPathPoint = (ClosestSplinePoint - GetActorLocation()).Length();
 	if (DistanceToClosestPathPoint > MaxDistanceToPathAllowed)
 	{
-		return EBoatPathingState::ReturningToPath;
+		OnPathingActorLeftPath.Broadcast(this);
+		TargetSpline = CurrentPath;
+		GenerateNewPath();
 	}
 	
 	return EBoatPathingState::FollowingPath;
 }
 
-void ACBBoat::CheckClosestPath_Elapsed()
+void ACBBoat::RegeneratePath_Elapsed()
 {
-	USplineComponent* SplineComponent = ICBPathProvider::Execute_GetClosestPath(GetWorld()->GetAuthGameMode(), this);
-	if (SplineComponent != CurrentPath)
-	{
-		OnPathingActorLeftPath.Broadcast(this);
-		CurrentPath = SplineComponent;
-		ICBPathProvider::Execute_RegisterPathingActorWithPath(GetWorld()->GetAuthGameMode(), this, SplineComponent);
-	}
+	GenerateNewPath();
 }
 
 void ACBBoat::AddInstancedMeshesForPathVis() const

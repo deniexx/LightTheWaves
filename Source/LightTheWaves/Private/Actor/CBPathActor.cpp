@@ -51,22 +51,6 @@ void ACBPathActor::RegisterBoatOnPath_Implementation(AActor* Boat)
 	}
 }
 
-int32 ACBPathActor::GetNumberOfMonstersOnPath_Implementation()
-{
-	return MonstersOnPath;
-}
-
-void ACBPathActor::AddMonsterToPath_Implementation(AActor* Monster)
-{
-	if (!Monster)
-	{
-		return;
-	}
-	
-	++MonstersOnPath;
-	Cast<ICBMonsterInterface>(Monster)->OnMonsterDeadEvent().AddDynamic(this, &ThisClass::OnMonsterDead);
-}
-
 bool ACBPathActor::IsBoatWithinDistanceFromStart_Implementation(float Distance)
 {
 	if (PathingActorsOnPath.Num() == 0)
@@ -100,11 +84,6 @@ bool ACBPathActor::IsBoatWithinDistanceFromStart_Implementation(float Distance)
 	}
 	
 	return false;
-}
-
-void ACBPathActor::OnMonsterDead(AActor* Actor)
-{
-	MonstersOnPath = FMath::Clamp(MonstersOnPath - 1, 0, MonstersOnPath);
 }
 
 void ACBPathActor::OnPathingActorLeftPath(AActor* PathingActor)

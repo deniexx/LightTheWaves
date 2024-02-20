@@ -8,6 +8,7 @@
 #include "Interface/CBPathProvider.h"
 #include "GameFramework/GameModeBase.h"
 #include "Interface/CBWaveDirector.h"
+#include "FMonsterSpawnerSettings.h"
 #include "CBGameMode.generated.h"
 
 class UEnvQuery;
@@ -105,43 +106,8 @@ struct FMonsterSpawningSettings
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseCurveForMonsterSpawnPeriod", EditConditionHides))
 	FCurveTableRowHandle MonsterSpawnCurve;
 
-	/** Should a curve or the array be used to find the max numbers of monsters spawned on a given path
-	 * TRUE - Curve will be used
-	 * FALSE - Array will be used
-	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
-	bool bUseCurveForMaxMonstersOnPath = false;
-
-	/** Should the number of boats be used to find the max number of spawned spawned on it
-	 *  TRUE - The number of boats will be used (by also adding the AdditionalMaxMonstersPerPath)
-	 *  FALSE - The curve of the array will be used
-	 */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
-	bool bUseBoatsAsForMaxMonsterOnPath = false;
-
-	/** An array containing the max number of monsters on a path for a given wave */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="!bUseCurveForMaxMonstersOnPath && !bUseBoatsAsForMaxMonsterOnPath", EditConditionHides))
-	TArray<float> MaxMonstersOnPath;
-
-	/** A curve containing the max number of monsters on a path for a given wave */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseCurveForMaxMonstersOnPath && !bUseBoatsAsForMaxMonsterOnPath", EditConditionHides))
-	FCurveTableRowHandle MaxMonstersOnPathCurve;
-
-	/** The maximum radius for offsetting the monster spawn location (make them look a bit more realistic) */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
-    float MaxRadiusForLocationOffset = 50.f;
-
-	/** This number will be added to the number of boats on the path to get the max number of monster spawnable on the path */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseBoatsAsForMaxMonsterOnPath", EditConditionHides))
-	int32 AdditionalMaxMonstersPerPath = 1;
-
-	/** The minimum distance from the path starting point where monsters can spawn */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (Units = "cm"))
-	float MinimumDistanceFromPathStart = 1000.f;
-
-	/** The monster class to be spawned (can be changed to an array if we decide to have multiple monsters) */
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
-	TSubclassOf<AActor> MonsterClass;
+	FMonsterSpawnerParams SpawnParams;
 };
 
 USTRUCT(BlueprintType)
@@ -250,22 +216,28 @@ private:
 	void ProcessMonsterSpawning();
 	void SpawnBoss();
 	void ProcessBossSpawning();
-	void RunMonsterSpawnEQS();
 	bool TrySpawnBoat();
 	bool IsAtMaxBoats();
 	
 	void StartNewWave(EGameActivity PreviousActivity = EGameActivity::None);
-
-	int32 GetMaxAllowedMonstersOnPath(AActor* Path);
-
+	
 	float GetRoundTimeElapsed() const;
 	float GetPercentRoundTimeElapsed() const;
 
 	UFUNCTION()
 	void SpawnBoat_TimerElapsed();
+	
+	UFUNCTION()
+	void OnMonsterSpawned(AActor* SpawnedMonster);
 
 	UFUNCTION()
-	void SpawnMonster(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus);
+	void OnMonsterDestroyed(AActor* DestroyedMonster);
+
+	UFUNCTION()
+	void OnBoatDestroyed(AActor* DestroyedBoat);
+	
+	UFUNCTION()
+	void SpawnMonster();
 
 	UFUNCTION()
 	void RecessTimer_Elapsed();
@@ -275,10 +247,15 @@ private:
 	
 	UFUNCTION()
 	void OnBossKilled(AActor* DestroyedActor);
-
-	/** Will grab a random free path and put in the OutPath variable(can fail) */
-	bool IsAnyPathFree(int32 MaxBoatsPerPath, AActor*& OutPath);
+	
 	TSubclassOf<AActor> GetRandomSpawnableBoat();
+	bool IsAnyPathFree(int32 MaxBoatsPerPath, AActor*& OutPath);
+
+	UPROPERTY()
+	TArray<AActor*> Boats;
+
+	UPROPERTY()
+	TArray<AActor*> Monsters;
 
 	AActor* GetRandomSpline(USplineComponent*& OutSplineComponent);
 	AActor* GetSplineClosestToLocation(const FVector& Location, USplineComponent*& OutSplineComponent);

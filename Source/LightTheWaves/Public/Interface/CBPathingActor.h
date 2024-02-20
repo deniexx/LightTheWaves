@@ -29,6 +29,9 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, Category = "PathingActor")
 	void SetPath(USplineComponent* NewPath);
+
+	UFUNCTION(BlueprintNativeEvent, Category = "PathingActor")
+	USplineComponent* GetPath();	
 	
 	virtual FOnPathingActorLeftPath& PathingActorLeftPathEvent() = 0;
 };

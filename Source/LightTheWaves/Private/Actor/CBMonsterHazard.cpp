@@ -31,6 +31,21 @@ FOnMonsterDead& ACBMonsterHazard::OnMonsterDeadEvent()
 	return OnMonsterDead;
 }
 
+AActor* ACBMonsterHazard::GetTarget_Implementation()
+{
+	return Target;
+}
+
+bool ACBMonsterHazard::IsTargeting_Implementation() const
+{
+	return Target != nullptr;
+}
+
+void ACBMonsterHazard::SetTarget_Implementation(AActor* InTarget)
+{
+	Target = InTarget;
+}
+
 void ACBMonsterHazard::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
