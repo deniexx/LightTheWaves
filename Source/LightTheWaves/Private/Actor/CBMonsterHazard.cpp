@@ -49,6 +49,7 @@ void ACBMonsterHazard::SetTarget_Implementation(AActor* InTarget)
 	{
 		Target = InTarget;
 		Cast<ICBPathingActor>(Target)->NewPathChosenEvent().AddDynamic(this, &ThisClass::OnNewPathChosen);
+		return;
 	}
 	
 	SetLifeSpan(5.f);

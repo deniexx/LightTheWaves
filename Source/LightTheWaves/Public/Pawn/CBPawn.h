@@ -7,6 +7,7 @@
 #include "Interface/CBGunInterface.h"
 #include "CBPawn.generated.h"
 
+class ACBProjectile;
 class UWidgetComponent;
 class UBoxComponent;
 class UInputAction;
@@ -114,12 +115,28 @@ protected:
 	
 	/** Projectile class to spawn from the cannon */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
-	TSubclassOf<AActor> ProjectileClass;
+	TSubclassOf<ACBProjectile> ProjectileClassNormal;
+
+	/** Projectile class to spawn from the cannon */
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
+	TSubclassOf<ACBProjectile> ProjectileClassMortar;
 	
 	/** Currently called from the input action, might have to rework later in order for it work with the cannon physical interaction */
 	UFUNCTION(BlueprintCallable)
 	virtual void Shoot() override;
 
+	UFUNCTION(BlueprintCallable)
+	virtual void SwitchAmmoType() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	virtual FVector GetLaunchVelocityForProjectile() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	virtual float GetProjectileLifeSpan() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetProjectileAreaOfEffect() const;
+	
 	UFUNCTION()
 	void RecenterTimer_Elapsed();
 
@@ -139,7 +156,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	int32 AmmoCapacity = 5;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
+	int32 MortarAmmoCapacity = 2;
+
+	int32 MortarAmmo = 0;
 	int32 Ammo = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool bMortarMode = false;
 	
 public:	
 	// Called every frame

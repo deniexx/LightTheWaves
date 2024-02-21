@@ -35,5 +35,8 @@ public:
 protected:
 
 	virtual void Shoot() = 0;
+	virtual void SwitchAmmoType() = 0;
+	virtual FVector GetLaunchVelocityForProjectile() = 0;
+	virtual float GetProjectileLifeSpan() = 0;
 	
 };

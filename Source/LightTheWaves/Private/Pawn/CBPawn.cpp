@@ -13,8 +13,10 @@
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "Actor/CBProjectile.h"
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 #include "Interface/CBHookOverlapInteractor.h"
 #include "LightTheWaves/LightTheWaves.h"
 
@@ -161,7 +163,7 @@ void ACBPawn::IncreaseCapacity_Implementation(int32 IncreaseAmount)
 
 bool ACBPawn::CanReload_Implementation()
 {
-	return Ammo < AmmoCapacity;
+	return Ammo < AmmoCapacity || MortarAmmo < MortarAmmoCapacity;
 }
 
 // Called when the game starts or when spawned
@@ -230,6 +232,8 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void ACBPawn::Reload_Implementation()
 {
 	Ammo = AmmoCapacity;
+	// @TODO: Check for how much we can reload
+	MortarAmmo = MortarAmmoCapacity;
 	OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
 }
 
@@ -253,15 +257,73 @@ void ACBPawn::HookHandEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 void ACBPawn::Shoot()
 {
 	/** This can be improved, but it's okay for debugging(adding things like aim assist) */
+	if (bMortarMode)
+	{
+		if (MortarAmmo > 0)
+		{
+			const FTransform SpawnTransform(HandCannon->GetForwardVector().ToOrientationRotator(), ShootLocation->GetComponentLocation());
+			ACBProjectile* Actor = GetWorld()->SpawnActorDeferred<ACBProjectile>(ProjectileClassMortar, SpawnTransform, nullptr, this, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+		
+			const float Power = 1 + FVector::DotProduct(FVector::UpVector, HandCannon->GetForwardVector());
+			UProjectileMovementComponent* ProjectileMovementComponent = Actor->GetComponentByClass<UProjectileMovementComponent>();
+			ProjectileMovementComponent->Velocity *= Power;
+			Actor->FinishSpawning(SpawnTransform);
+			--MortarAmmo;
+
+			// @TODO: Mortar ammo broadcast and UI
+		}
+		return;		
+	}
+	
 	if (Ammo > 0)
 	{
-		UE_LOG(CBLog, Warning, TEXT("Shooting!"));
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		GetWorld()->SpawnActor<AActor>(ProjectileClass, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator(), SpawnParameters);
-		Ammo--;
+		GetWorld()->SpawnActor<AActor>(ProjectileClassNormal, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator(), SpawnParameters);
+		--Ammo;
 		OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
 	}
+}
+
+void ACBPawn::SwitchAmmoType()
+{
+	bMortarMode = !bMortarMode;
+}
+
+FVector ACBPawn::GetLaunchVelocityForProjectile()
+{
+	FVector Velocity;
+	if (bMortarMode)
+	{
+		const float Power = 1 + FVector::DotProduct(FVector::UpVector, HandCannon->GetForwardVector());
+		Velocity = Power * ProjectileClassMortar->GetDefaultObject<ACBProjectile>()->GetLaunchVelocity();
+	}
+	else
+	{
+		Velocity = ProjectileClassNormal->GetDefaultObject<ACBProjectile>()->GetLaunchVelocity();
+	}
+
+	return (HandCannon->GetForwardVector()) * Velocity.Length();
+}
+
+float ACBPawn::GetProjectileLifeSpan()
+{
+	if (bMortarMode)
+	{
+		return ProjectileClassMortar->GetDefaultObject<ACBProjectile>()->GetLifetime();
+	}
+	
+	return ProjectileClassNormal->GetDefaultObject<ACBProjectile>()->GetLifetime();
+}
+
+float ACBPawn::GetProjectileAreaOfEffect() const
+{
+	if (bMortarMode)
+	{
+		return ProjectileClassMortar->GetDefaultObject<ACBProjectile>()->GetAreaOfEffect();
+	}
+	
+	return ProjectileClassNormal->GetDefaultObject<ACBProjectile>()->GetAreaOfEffect();
 }
 
 void ACBPawn::OnRecenterStarted()
