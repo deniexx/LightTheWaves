@@ -23,6 +23,11 @@ protected:
 	UFUNCTION()
 	void OnActivationBeginOverlap(UPrimitiveComponent* PrimitiveComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int OtherBodyIndex, bool bFromSweep,
 	                              const FHitResult& HitResult);
+
+	UFUNCTION()
+	void OnActivationEndOverlap(UPrimitiveComponent* PrimitiveComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int OtherBodyIndex, bool bFromSweep,
+								  const FHitResult& HitResult);
+	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -46,4 +51,7 @@ protected:
 
 	UFUNCTION(BlueprintNativeEvent)
 	void OnLeverActivated();
+
+	UFUNCTION(BlueprintNativeEvent)
+	void OnLeverDeActivated();
 };

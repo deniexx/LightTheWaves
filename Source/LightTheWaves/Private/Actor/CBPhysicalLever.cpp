@@ -57,6 +57,15 @@ void ACBPhysicalLever::OnActivationBeginOverlap(UPrimitiveComponent* PrimitiveCo
 	}
 }
 
+void ACBPhysicalLever::OnActivationEndOverlap(UPrimitiveComponent* PrimitiveComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComponent, int OtherBodyIndex, bool bFromSweep, const FHitResult& HitResult)
+{
+	if(OtherComponent == Lever)
+	{
+		OnLeverDeActivated();
+	}
+}
+
 // Called when the game starts or when spawned
 void ACBPhysicalLever::BeginPlay()
 {
@@ -64,6 +73,10 @@ void ACBPhysicalLever::BeginPlay()
 
 	Lever->SetSimulatePhysics(true);
 	ActivationBox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnActivationBeginOverlap);
+}
+
+void ACBPhysicalLever::OnLeverDeActivated_Implementation()
+{
 }
 
 void ACBPhysicalLever::OnLeverActivated_Implementation()
