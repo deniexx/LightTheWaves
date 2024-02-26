@@ -11,6 +11,8 @@
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "GameFramework/PlayerState.h"
+#include "Interface/CBPlayerInterface.h"
 
 static TAutoConsoleVariable<int32> CVarDrawDebugBoatPathing(
 	TEXT("ShowDebugBoatPathing"),
@@ -258,6 +260,15 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 		LeaveDebris(GetActorLocation());
 	}
 
+	if (DestroyingObject != EDestroyingObject::Port)
+	{
+		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(GetPlayerState(), -ReputationLoss);
+	}
+	else
+	{
+		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(GetPlayerState(), ReputationRegain);
+	}
+	
 	OnPathingActorLeftPath.Broadcast(this);
 	Destroy();
 }

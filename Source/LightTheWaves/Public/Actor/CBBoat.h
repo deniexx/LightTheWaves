@@ -117,7 +117,10 @@ protected:
 
 	/** How much life is lost when a boat is destroyed */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Boat Properties")
-	float LifeLoss = 10.f;
+	float ReputationLoss = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float ReputationRegain = 5.f;
 
 	/** The maximum distance allowed between the boat and path, without having it correct itself(move back towards the path)*/
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
