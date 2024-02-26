@@ -6,7 +6,17 @@
 #include "UObject/Interface.h"
 #include "CBPlayerInterface.generated.h"
 
+USTRUCT(BlueprintType)
+struct FGameLostData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "GameLostData")
+	FString LoseReason;
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttributeChanged, float, OldAmount, float, NewAmount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameLost, const FGameLostData&, Data);
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -40,6 +50,17 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Attributes")
 	bool HasEnoughCurrency(int32 AmountToCheck);
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Reputation")
+	float GetPlayerReputation() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Attributes")
+	void ApplyChangeToPlayerReputation(float Delta);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Attributes")
+	void IncreaseMaxReputation(float IncreaseAmount);	
+
 	virtual FOnAttributeChanged& OnPointsChangedEvent() = 0;
 	virtual FOnAttributeChanged& OnCurrencyChangedEvent() = 0;
+	virtual FOnAttributeChanged& OnReputationChangedEvent() = 0;
+	virtual FOnGameLost& OnGameLostEvent() = 0;
 };

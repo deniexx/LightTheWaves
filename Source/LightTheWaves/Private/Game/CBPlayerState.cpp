@@ -31,6 +31,9 @@ void ACBPlayerState::BeginPlay()
 	{
 		ShopSubsystem->RegisterPlayerState(this);
 	}
+
+	Reputation = StartingReputation;
+	MaxReputation = StartingReputation;
 }
 
 void ACBPlayerState::ApplyChangeToCurrency_Implementation(int32 Delta)
@@ -55,6 +58,33 @@ void ACBPlayerState::ApplyChangeToPoints_Implementation(int32 Delta)
 	}
 }
 
+void ACBPlayerState::ApplyChangeToPlayerReputation_Implementation(float Delta)
+{
+	const float OldReputation = Reputation;
+	Reputation = FMath::Clamp(Reputation + Delta, 0, MaxReputation);
+
+	if (OldReputation != Reputation)
+	{
+		OnReputationChanged.Broadcast(OldReputation, Reputation);
+	}
+
+	if (Reputation <= 0.001f)
+	{
+		FGameLostData Data;
+		Data.LoseReason = "Lost too much reputation";
+		OnGameLost.Broadcast(Data);
+	}
+}
+
+void ACBPlayerState::IncreaseMaxReputation_Implementation(float IncreaseAmount)
+{
+	const float OldMaxReputation = MaxReputation;
+	MaxReputation += IncreaseAmount;
+	const float Delta = MaxReputation - OldMaxReputation;
+
+	Execute_ApplyChangeToPlayerReputation(this, Delta);
+}
+
 int32 ACBPlayerState::GetCurrency_Implementation() const
 {
 	return Currency;
@@ -70,6 +100,11 @@ bool ACBPlayerState::HasEnoughCurrency_Implementation(int32 AmountToCheck)
 	return Currency >= AmountToCheck;
 }
 
+float ACBPlayerState::GetPlayerReputation_Implementation() const
+{
+	return Reputation;
+}
+
 FOnAttributeChanged& ACBPlayerState::OnCurrencyChangedEvent()
 {
 	return OnCurrencyChanged;
@@ -78,4 +113,14 @@ FOnAttributeChanged& ACBPlayerState::OnCurrencyChangedEvent()
 FOnAttributeChanged& ACBPlayerState::OnPointsChangedEvent()
 {
 	return OnPointsChanged;
+}
+
+FOnAttributeChanged& ACBPlayerState::OnReputationChangedEvent()
+{
+	return OnReputationChanged;
+}
+
+FOnGameLost& ACBPlayerState::OnGameLostEvent()
+{
+	return OnGameLost;
 }
