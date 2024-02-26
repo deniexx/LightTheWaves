@@ -26,15 +26,24 @@ public:
 	virtual AActor* GetTarget_Implementation() override;
 	virtual bool IsTargeting_Implementation() const override;
 	virtual void SetTarget_Implementation(AActor* InTarget) override;
+	bool AttemptRelocation();
 	/** End Monster Interface */
 	
 	virtual void PostInitializeComponents() override;
 
 protected:
+
+	virtual void BeginPlay() override;
 	
 	UFUNCTION()
 	void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	UFUNCTION()
+	void OnMonsterFinishedSubmerging(AActor* MovingActor);
+
+	UFUNCTION()
+	void DestroyAfterSubmerge(AActor* MovingActor);
+	
 	UFUNCTION()
 	void OnNewPathChosen(USplineComponent* NewPath);
 
@@ -65,5 +74,4 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnMonsterDead OnMonsterDead;
-	
 };

@@ -3,9 +3,18 @@
 
 #include "Async/CBMoveActorToAction.h"
 
-UCBMoveActorToAction* UCBMoveActorToAction::Execute(UObject* WorldContextObject, AActor* Actor, const FMoveActorToActionData& Data)
+#include "LightTheWaves/LightTheWaves.h"
+
+UCBMoveActorToAction* UCBMoveActorToAction::Execute(UObject* WorldContextObject, AActor* Actor, FMoveActorToActionData Data)
 {
 	UCBMoveActorToAction* Action = NewObject<UCBMoveActorToAction>();
+	
+	if (Data.bUseActorLocationAsStart)
+	{
+		Data.StartLocation = Actor->GetActorLocation();
+	}
+
+	Data.InterpAlpha = 0.f;
 	Action->MoveActorToData = Data;
 	Action->MovingActor = Actor;
 	Action->RegisterWithGameInstance(WorldContextObject);
@@ -15,7 +24,7 @@ UCBMoveActorToAction* UCBMoveActorToAction::Execute(UObject* WorldContextObject,
 
 void UCBMoveActorToAction::Tick(float DeltaTime)
 {
-	if (LastFrameNumberWeTicked == GFrameCounter || bInterpFinished)
+	if (LastFrameNumberWeTicked == GFrameCounter || bInterpFinished || !MovingActor)
 	{
 		return;
 	}
@@ -23,7 +32,15 @@ void UCBMoveActorToAction::Tick(float DeltaTime)
 	LastFrameNumberWeTicked = GFrameCounter;
 	
 	MoveActorToData.InterpAlpha += DeltaTime * (1 / MoveActorToData.InterpDuration);
-	const float ActualAlpha = MoveActorToData.Curve ? MoveActorToData.Curve->GetFloatValue(MoveActorToData.InterpAlpha) : MoveActorToData.InterpAlpha;
+	float ActualAlpha;
+	if (MoveActorToData.Curve != nullptr)
+	{
+		ActualAlpha = MoveActorToData.Curve->GetFloatValue(MoveActorToData.InterpAlpha);
+	}
+	else
+	{
+		ActualAlpha = MoveActorToData.InterpAlpha;
+	}
 	const FVector NewLocation = FMath::Lerp(MoveActorToData.StartLocation, MoveActorToData.EndLocation, ActualAlpha);
 	
 	MovingActor->SetActorLocation(NewLocation);

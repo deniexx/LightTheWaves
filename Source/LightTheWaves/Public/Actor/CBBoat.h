@@ -126,6 +126,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float MaxDistanceToPathAllowed = 50.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float SinkingZOffset = 600.f;
+
 	/** How much further forward should the actor choose a point on the path, when returning to it
 	 * 0 means it will make as straight of a line as possible to the nearest point on the spline, not make any horizontal progress along it
 	 * > 0 means that the boat will still in a sense continue moving forward, but also towards the spline at the same time
@@ -159,6 +162,9 @@ protected:
 	UPROPERTY(BlueprintAssignable, Category = "Boat Properties")
 	FOnNewPathChosen OnNewPathChosen;
 
+	UFUNCTION()
+	void DestroyOnFinishedMoving(AActor* MovingActor);
+	
 	void Die(EDestroyingObject DestroyingObject);
 
 private:
