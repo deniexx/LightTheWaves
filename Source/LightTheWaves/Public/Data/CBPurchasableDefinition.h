@@ -33,6 +33,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PurchasableDefinition")
 	int32 MaxPurchases = 1;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PurchasableDefinition")
+	bool bIsInfinite = false;
+
 	/** The icon that will be displayed on the button */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PurchasableDefinition")
 	TSoftObjectPtr<UTexture2D> UpgradeIcon;

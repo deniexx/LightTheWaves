@@ -232,9 +232,28 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void ACBPawn::Reload_Implementation()
 {
 	Ammo = AmmoCapacity;
-	// @TODO: Check for how much we can reload
-	MortarAmmo = MortarAmmoCapacity;
+	
+	if(StoredMortarAmmo > 0 && MortarAmmo < MortarAmmoCapacity)
+	{
+		MortarAmmoNeeded = MortarAmmoCapacity - MortarAmmo;
+		if(MortarAmmoNeeded <= StoredMortarAmmo)
+		{
+			MortarAmmo = MortarAmmoCapacity;
+			StoredMortarAmmo = StoredMortarAmmo - MortarAmmoNeeded;
+		}
+		else
+		{
+			MortarAmmo += StoredMortarAmmo;
+			StoredMortarAmmo = 0;
+		}
+	}
+	
 	OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
+}
+
+void ACBPawn::AddStoredAmmo_Implementation(int32 IncreaseAmount)
+{
+	StoredMortarAmmo += IncreaseAmount;
 }
 
 void ACBPawn::HookHandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp,
