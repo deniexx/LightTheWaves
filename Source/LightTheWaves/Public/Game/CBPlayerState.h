@@ -28,7 +28,7 @@ public:
 	virtual void IncreaseMaxReputation_Implementation(float IncreaseAmount) override;
 	virtual FOnAttributeChanged& OnCurrencyChangedEvent() override;
 	virtual FOnAttributeChanged& OnPointsChangedEvent() override;
-	virtual FOnAttributeChanged& OnReputationChangedEvent() override;
+	virtual FOnReputationChanged& OnReputationChangedEvent() override;
 	virtual FOnGameLost& OnGameLostEvent() override;
 	/** End Player Interface */
 	
@@ -46,7 +46,7 @@ protected:
 	FOnAttributeChanged OnPointsChanged;
 	
 	UPROPERTY(BlueprintAssignable)
-	FOnAttributeChanged OnReputationChanged;
+	FOnReputationChanged OnReputationChanged;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnGameLost OnGameLost;	

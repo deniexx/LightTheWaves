@@ -65,7 +65,7 @@ void ACBPlayerState::ApplyChangeToPlayerReputation_Implementation(float Delta)
 
 	if (OldReputation != Reputation)
 	{
-		OnReputationChanged.Broadcast(OldReputation, Reputation);
+		OnReputationChanged.Broadcast(OldReputation, Reputation, MaxReputation);
 	}
 
 	if (Reputation <= 0.001f)
@@ -115,7 +115,7 @@ FOnAttributeChanged& ACBPlayerState::OnPointsChangedEvent()
 	return OnPointsChanged;
 }
 
-FOnAttributeChanged& ACBPlayerState::OnReputationChangedEvent()
+FOnReputationChanged& ACBPlayerState::OnReputationChangedEvent()
 {
 	return OnReputationChanged;
 }

@@ -16,6 +16,7 @@ struct FGameLostData
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttributeChanged, float, OldAmount, float, NewAmount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnReputationChanged, float, OldAmount, float, NewAmount, float, MaxAmount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameLost, const FGameLostData&, Data);
 
 // This class does not need to be modified.
@@ -61,6 +62,6 @@ public:
 
 	virtual FOnAttributeChanged& OnPointsChangedEvent() = 0;
 	virtual FOnAttributeChanged& OnCurrencyChangedEvent() = 0;
-	virtual FOnAttributeChanged& OnReputationChangedEvent() = 0;
+	virtual FOnReputationChanged& OnReputationChangedEvent() = 0;
 	virtual FOnGameLost& OnGameLostEvent() = 0;
 };
