@@ -46,7 +46,10 @@ void ACBPathActor::RegisterBoatOnPath_Implementation(AActor* Boat)
 	if (Boat)
 	{
 		PathingActorsOnPath.AddUnique(Boat);
-		Cast<ICBPathingActor>(Boat)->PathingActorLeftPathEvent().AddDynamic(this, &ThisClass::OnPathingActorLeftPath);
+		if (ICBPathingActor* PathingActor = Cast<ICBPathingActor>(Boat))
+		{
+			PathingActor->PathingActorLeftPathEvent().AddDynamic(this, &ThisClass::OnPathingActorLeftPath);
+		}
 		InstancedPath->SetVisibility(true);
 	}
 }
@@ -95,13 +98,16 @@ void ACBPathActor::OnPathingActorLeftPath(AActor* PathingActor)
 	else
 	{
 		PathingActorsOnPath.Remove(PathingActor);
+		if (ICBPathingActor* PathingInterface = Cast<ICBPathingActor>(PathingActor))
+		{
+			PathingInterface->PathingActorLeftPathEvent().RemoveDynamic(this, &ThisClass::OnPathingActorLeftPath);
+		}
 	}
 	
 	if(PathingActorsOnPath.IsEmpty())
 	{
 		InstancedPath->SetVisibility(false);
 	}
-
 }
 
 void ACBPathActor::CleanArray()

@@ -4,6 +4,7 @@
 #include "Actor/CBPhysicalButton.h"
 
 #include "Components/BoxComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "PhysicsEngine/PhysicsThrusterComponent.h"
 
@@ -79,6 +80,7 @@ void ACBPhysicalButton::OnOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 		}
 		
 		OnButtonActivated();
+		UGameplayStatics::PlaySoundAtLocation(this, ClickSound, GetActorLocation(), FRotator::ZeroRotator);
 	}
 }
 

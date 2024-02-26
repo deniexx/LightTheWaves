@@ -10,9 +10,11 @@
 #include "LightTheWaves/LightTheWaves.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
+#include "Async/CBMoveActorToAction.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "GameFramework/PlayerState.h"
 #include "Interface/CBPlayerInterface.h"
+#include "Kismet/GameplayStatics.h"
 
 static TAutoConsoleVariable<int32> CVarDrawDebugBoatPathing(
 	TEXT("ShowDebugBoatPathing"),
@@ -116,7 +118,7 @@ void ACBBoat::GenerateNewPath()
 	if (bDrawDebug)
 	{
 		DrawDebugSphere(GetWorld(), DesiredLocation, 8, 8, FColor::Yellow, false, 5);
-	}// @TODO: Make the Find Path To Location Async
+	}
 	if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), DesiredLocation))
 	{
 		ReturnToPathPoints = MoveTemp(NavPath->PathPoints);
@@ -136,7 +138,6 @@ void ACBBoat::GenerateNewPath()
 			}
 		}
 		CurrentPath = BoatPathingVisSpline;
-		
 		AddInstancedMeshesForPathVis();
 	}
 }
@@ -253,24 +254,37 @@ float ACBBoat::GetCurrentHealth_Implementation() const
 	return Health;
 }
 
+void ACBBoat::DestroyOnFinishedMoving(AActor* MovingActor)
+{
+	Destroy();
+}
+
 void ACBBoat::Die(EDestroyingObject DestroyingObject)
 {
 	if (TEST_BIT(DebrisLeavingObjects, DestroyingObject))
 	{
 		LeaveDebris(GetActorLocation());
 	}
-
+	
+	OnPathingActorLeftPath.Broadcast(this);
+	
 	if (DestroyingObject != EDestroyingObject::Port)
 	{
-		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(GetPlayerState(), -ReputationLoss);
+		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(UGameplayStatics::GetPlayerState(this, 0), -ReputationLoss);
+		FMoveActorToActionData Data;
+		Data.bUseActorLocationAsStart = true;
+		Data.EndLocation = GetActorLocation() - (GetActorUpVector() * SinkingZOffset);
+		Data.InterpDuration = 2.f;
+		UCBMoveActorToAction* Action = UCBMoveActorToAction::Execute(this, this, Data);
+		Action->OnActorFinishedMoving.AddDynamic(this, &ThisClass::DestroyOnFinishedMoving);
 	}
 	else
 	{
-		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(GetPlayerState(), ReputationRegain);
+		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(UGameplayStatics::GetPlayerState(this, 0), ReputationRegain);
+		Destroy();
 	}
 	
-	OnPathingActorLeftPath.Broadcast(this);
-	Destroy();
+
 }
 
 #if WITH_EDITOR

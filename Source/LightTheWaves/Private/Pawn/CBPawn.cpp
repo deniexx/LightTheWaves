@@ -18,6 +18,7 @@
 #include "Components/WidgetComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Interface/CBHookOverlapInteractor.h"
+#include "Kismet/GameplayStatics.h"
 #include "LightTheWaves/LightTheWaves.h"
 
 // Sets default values
@@ -289,9 +290,10 @@ void ACBPawn::Shoot()
 			Actor->FinishSpawning(SpawnTransform);
 			--MortarAmmo;
 
-			// @TODO: Mortar ammo broadcast and UI
+			UGameplayStatics::PlaySoundAtLocation(this, MortarShootSound, ShootLocation->GetComponentLocation());
+			OnMortarAmmoUpdated.Broadcast(MortarAmmo, MortarAmmoCapacity);
 		}
-		return;		
+		return;
 	}
 	
 	if (Ammo > 0)
@@ -300,6 +302,7 @@ void ACBPawn::Shoot()
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		GetWorld()->SpawnActor<AActor>(ProjectileClassNormal, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator(), SpawnParameters);
 		--Ammo;
+		UGameplayStatics::PlaySoundAtLocation(this, NormalShootSound, ShootLocation->GetComponentLocation());
 		OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
 	}
 }

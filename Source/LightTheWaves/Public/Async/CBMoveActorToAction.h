@@ -32,7 +32,7 @@ struct FMoveActorToActionData
 
 	/** The interpolation curve to be used, if this is null, Linear Interpolation will be used */
 	UPROPERTY(BlueprintReadWrite, Category = "MoveActorToActionData")
-	UCurveFloat* Curve;
+	UCurveFloat* Curve = nullptr;
 
 private:
 
@@ -50,7 +50,7 @@ class LIGHTTHEWAVES_API UCBMoveActorToAction : public UBlueprintAsyncActionBase,
 public:
 
 	UFUNCTION(BlueprintCallable, Category = "MonsterSpawnerAction", meta = (DisplayName = "MoveActorToAction", WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
-	static UCBMoveActorToAction* Execute(UObject* WorldContextObject, AActor* Actor, const FMoveActorToActionData& Data);
+	static UCBMoveActorToAction* Execute(UObject* WorldContextObject, AActor* Actor, FMoveActorToActionData Data);
 
 	virtual void Tick(float DeltaTime) override;
 	virtual UWorld* GetTickableGameObjectWorld() const override;

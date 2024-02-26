@@ -113,6 +113,12 @@ protected:
 	/** Recenter input action */
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> RecenterInputAction;
+
+	UPROPERTY(VisibleAnywhere, Category = "Cannon")
+	TObjectPtr<USoundBase> NormalShootSound;
+
+	UPROPERTY(VisibleAnywhere, Category = "Cannon")
+	TObjectPtr<USoundBase> MortarShootSound;
 	
 	/** Projectile class to spawn from the cannon */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
@@ -152,6 +158,9 @@ protected:
 
 	UPROPERTY(BlueprintAssignable, Category = "CBPawn")
 	FOnAmmoUpdated OnAmmoUpdated;
+
+	UPROPERTY(BlueprintAssignable, Category = "CBPawn")
+	FOnAmmoUpdated OnMortarAmmoUpdated;
 	
 	/** The maximum ammo that the gun can carry by default */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")

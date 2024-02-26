@@ -47,6 +47,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<UPhysicsThrusterComponent> PhysicsThrusterComponent;
 
+	UPROPERTY(VisibleAnywhere, Category = "Button Properties")
+	TObjectPtr<USoundBase> ClickSound;
+	
 	/** This Event will be called once the button has been activated(pushed far enough to where the top collides with the activation box) */
 	UFUNCTION(BlueprintNativeEvent)
 	void OnButtonActivated();
