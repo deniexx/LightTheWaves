@@ -32,6 +32,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void IncreaseCapacity(int32 IncreaseAmount = 1);
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void AddStoredAmmo(int32 IncreaseAmount = 1);
+
 protected:
 
 	virtual void Shoot() = 0;

@@ -32,6 +32,7 @@ public:
 	virtual void IncreaseCapacity_Implementation(int32 IncreaseAmount) override;
 	virtual bool CanReload_Implementation() override;
 	virtual void Reload_Implementation() override;
+	virtual void AddStoredAmmo_Implementation(int32 IncreaseAmount) override;
 	/** End Gun Interface */
 
 protected:
@@ -159,9 +160,18 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	int32 MortarAmmoCapacity = 2;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	int32 MortarAmmo = 0;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	int32 Ammo = 0;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
+	int32 StoredMortarAmmo = 0;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Cannon")
+	int32 MortarAmmoNeeded;
+	
 	UPROPERTY(BlueprintReadOnly)
 	bool bMortarMode = false;
 	

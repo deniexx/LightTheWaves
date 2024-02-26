@@ -26,13 +26,16 @@ FPurchaseReturnInfo UCBShopSubsystem::TryPurchase(UCBPurchasableDefinition* Purc
 		PurchaseReturnInfo.FailReason = EPurchaseFailReason::NotEnoughCurrency;
 		return PurchaseReturnInfo;
 	}
-	
-	if (BoughtUpgrades.Contains(PurchasableDefinition->IdentityTag) && BoughtUpgrades[PurchasableDefinition->IdentityTag] >= PurchasableDefinition->MaxPurchases)
+
+	if(!PurchasableDefinition->bIsInfinite)
 	{
-		FPurchaseReturnInfo PurchaseReturnInfo;
-		PurchaseReturnInfo.bWasSuccessful = false;
-		PurchaseReturnInfo.FailReason = EPurchaseFailReason::AlreadyBoughtMax;
-		return PurchaseReturnInfo;
+		if (BoughtUpgrades.Contains(PurchasableDefinition->IdentityTag) && BoughtUpgrades[PurchasableDefinition->IdentityTag] >= PurchasableDefinition->MaxPurchases)
+		{
+			FPurchaseReturnInfo PurchaseReturnInfo;
+			PurchaseReturnInfo.bWasSuccessful = false;
+			PurchaseReturnInfo.FailReason = EPurchaseFailReason::AlreadyBoughtMax;
+			return PurchaseReturnInfo;
+		}
 	}
 
 	FPurchaseReturnInfo PurchaseReturnInfo;
