@@ -11,7 +11,7 @@ class UCBPurchasableAction;
 /**
  * 
  */
-UCLASS()
+UCLASS(BlueprintType)
 class LIGHTTHEWAVES_API UCBPurchasableDefinition : public UDataAsset
 {
 	GENERATED_BODY()

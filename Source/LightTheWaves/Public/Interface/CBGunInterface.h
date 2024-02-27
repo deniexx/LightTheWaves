@@ -24,7 +24,7 @@ class LIGHTTHEWAVES_API ICBGunInterface
 public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void Reload();
+	void Reload(bool bMortar);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool CanReload();
@@ -38,7 +38,7 @@ public:
 protected:
 
 	virtual void Shoot() = 0;
-	virtual void SwitchAmmoType() = 0;
+	//virtual void SwitchAmmoType() = 0;
 	virtual FVector GetLaunchVelocityForProjectile() = 0;
 	virtual float GetProjectileLifeSpan() = 0;
 	

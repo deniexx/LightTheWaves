@@ -123,7 +123,10 @@ void ACBBoat::GenerateNewPath()
 	{
 		ReturnToPathPoints = MoveTemp(NavPath->PathPoints);
 		PointIndex = 0;
-		CachedDestination = ReturnToPathPoints[ReturnToPathPoints.Num() - 1];
+		if (ReturnToPathPoints.Num() > 0)
+		{
+			CachedDestination = ReturnToPathPoints[ReturnToPathPoints.Num() - 1];
+		}
 		const float ActorZ = GetActorLocation().Z;
 		CachedDestination.Z = ActorZ;
 

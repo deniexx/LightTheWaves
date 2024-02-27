@@ -31,7 +31,7 @@ public:
 	/** Gun Interface */
 	virtual void IncreaseCapacity_Implementation(int32 IncreaseAmount) override;
 	virtual bool CanReload_Implementation() override;
-	virtual void Reload_Implementation() override;
+	virtual void Reload_Implementation(bool bMortar) override;
 	virtual void AddStoredAmmo_Implementation(int32 IncreaseAmount) override;
 	/** End Gun Interface */
 
@@ -114,10 +114,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> RecenterInputAction;
 
-	UPROPERTY(VisibleAnywhere, Category = "Cannon")
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	TObjectPtr<USoundBase> NormalShootSound;
 
-	UPROPERTY(VisibleAnywhere, Category = "Cannon")
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	TObjectPtr<USoundBase> MortarShootSound;
 	
 	/** Projectile class to spawn from the cannon */
@@ -132,8 +132,8 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual void Shoot() override;
 
-	UFUNCTION(BlueprintCallable)
-	virtual void SwitchAmmoType() override;
+	//UFUNCTION(BlueprintCallable)
+	//virtual void SwitchAmmoType() override;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	virtual FVector GetLaunchVelocityForProjectile() override;
@@ -158,9 +158,6 @@ protected:
 
 	UPROPERTY(BlueprintAssignable, Category = "CBPawn")
 	FOnAmmoUpdated OnAmmoUpdated;
-
-	UPROPERTY(BlueprintAssignable, Category = "CBPawn")
-	FOnAmmoUpdated OnMortarAmmoUpdated;
 	
 	/** The maximum ammo that the gun can carry by default */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")

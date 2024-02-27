@@ -246,6 +246,11 @@ bool UCBMonsterSpawnerAction::AttemptAdjustSpawnLocationForBoat(FVector& Locatio
 	{
 		return false;
 	}
+	
+	if (DistanceOnSpline - Path->GetSplineLength() < SpawnerParams.MinDistanceFromStartAndFinish)
+	{
+		return false;
+	}
 
 	// Location adjusted successfully
 	Location = SplineLocation;

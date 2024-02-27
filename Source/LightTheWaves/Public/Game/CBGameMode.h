@@ -201,6 +201,9 @@ protected:
 	UPROPERTY()
 	FTimerHandle RecessTimerHandle;
 
+	UFUNCTION(Exec)
+	void ClearDebris();
+
 private:
 	
 	float GetBoatSpawnPeriod();

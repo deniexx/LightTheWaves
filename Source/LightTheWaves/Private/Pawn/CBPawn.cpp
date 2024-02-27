@@ -21,6 +21,15 @@
 #include "Kismet/GameplayStatics.h"
 #include "LightTheWaves/LightTheWaves.h"
 
+static TAutoConsoleVariable<int32> CVarInfiniteAmmo(
+	TEXT("CB.InfiniteAmmo"),
+	0,
+	TEXT("Enabled/Disables Infinite Ammo")
+	TEXT(" 0: Ammo is NOT infinite/n")
+	TEXT(" 1: Ammo is infinite/n"),
+	ECVF_Cheat
+);
+
 // Sets default values
 ACBPawn::ACBPawn()
 {
@@ -230,26 +239,33 @@ void ACBPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	}
 }
 
-void ACBPawn::Reload_Implementation()
+void ACBPawn::Reload_Implementation(bool bMortar)
 {
-	Ammo = AmmoCapacity;
-	
-	if(StoredMortarAmmo > 0 && MortarAmmo < MortarAmmoCapacity)
+	if(bMortar)
 	{
-		MortarAmmoNeeded = MortarAmmoCapacity - MortarAmmo;
-		if(MortarAmmoNeeded <= StoredMortarAmmo)
+		if(StoredMortarAmmo > 0 && MortarAmmo < MortarAmmoCapacity)
 		{
-			MortarAmmo = MortarAmmoCapacity;
-			StoredMortarAmmo = StoredMortarAmmo - MortarAmmoNeeded;
+			MortarAmmoNeeded = MortarAmmoCapacity - MortarAmmo;
+			if(MortarAmmoNeeded <= StoredMortarAmmo)
+			{
+				MortarAmmo = MortarAmmoCapacity;
+				StoredMortarAmmo = StoredMortarAmmo - MortarAmmoNeeded;
+			}
+			else
+			{
+				MortarAmmo += StoredMortarAmmo;
+				StoredMortarAmmo = 0;
+			}
 		}
-		else
-		{
-			MortarAmmo += StoredMortarAmmo;
-			StoredMortarAmmo = 0;
-		}
+		OnAmmoUpdated.Broadcast(MortarAmmo, MortarAmmoCapacity);
 	}
-	
-	OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
+	else
+	{
+		Ammo = AmmoCapacity;
+		OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
+	}
+
+	bMortarMode = bMortar;
 }
 
 void ACBPawn::AddStoredAmmo_Implementation(int32 IncreaseAmount)
@@ -277,9 +293,10 @@ void ACBPawn::HookHandEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 void ACBPawn::Shoot()
 {
 	/** This can be improved, but it's okay for debugging(adding things like aim assist) */
+	const bool bInfiniteAmmo = CVarInfiniteAmmo.GetValueOnAnyThread() > 0;
 	if (bMortarMode)
 	{
-		if (MortarAmmo > 0)
+		if (MortarAmmo > 0 || bInfiniteAmmo)
 		{
 			const FTransform SpawnTransform(HandCannon->GetForwardVector().ToOrientationRotator(), ShootLocation->GetComponentLocation());
 			ACBProjectile* Actor = GetWorld()->SpawnActorDeferred<ACBProjectile>(ProjectileClassMortar, SpawnTransform, nullptr, this, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
@@ -288,28 +305,28 @@ void ACBPawn::Shoot()
 			UProjectileMovementComponent* ProjectileMovementComponent = Actor->GetComponentByClass<UProjectileMovementComponent>();
 			ProjectileMovementComponent->Velocity *= Power;
 			Actor->FinishSpawning(SpawnTransform);
-			--MortarAmmo;
-
+			if (!bInfiniteAmmo)
+			{
+				--MortarAmmo;
+			}
+			OnAmmoUpdated.Broadcast(MortarAmmo, MortarAmmoCapacity);
 			UGameplayStatics::PlaySoundAtLocation(this, MortarShootSound, ShootLocation->GetComponentLocation());
-			OnMortarAmmoUpdated.Broadcast(MortarAmmo, MortarAmmoCapacity);
 		}
 		return;
 	}
 	
-	if (Ammo > 0)
+	if (Ammo > 0 || bInfiniteAmmo)
 	{
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		GetWorld()->SpawnActor<AActor>(ProjectileClassNormal, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator(), SpawnParameters);
-		--Ammo;
+		if (!bInfiniteAmmo)
+		{
+			--Ammo;
+		}
 		UGameplayStatics::PlaySoundAtLocation(this, NormalShootSound, ShootLocation->GetComponentLocation());
 		OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
 	}
-}
-
-void ACBPawn::SwitchAmmoType()
-{
-	bMortarMode = !bMortarMode;
 }
 
 FVector ACBPawn::GetLaunchVelocityForProjectile()

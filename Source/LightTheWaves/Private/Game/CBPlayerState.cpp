@@ -8,6 +8,15 @@
 #include "LightTheWaves/LightTheWaves.h"
 #include "Subsystem/CBShopSubsystem.h"
 
+static TAutoConsoleVariable<int32> CVarInfiniteMoney(
+	TEXT("CB.InfiniteMoney"),
+	0,
+	TEXT("Enabled/Disables Infinite Money")
+	TEXT(" 0: Money is NOT infinite/n")
+	TEXT(" 1: Money is infinite/n"),
+	ECVF_Cheat
+);
+
 void ACBPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
@@ -38,6 +47,12 @@ void ACBPlayerState::BeginPlay()
 
 void ACBPlayerState::ApplyChangeToCurrency_Implementation(int32 Delta)
 {
+	const bool bInfiniteMoney = CVarInfiniteMoney.GetValueOnAnyThread() > 0;
+	if (bInfiniteMoney)
+	{
+		return;
+	}
+	
 	const int32 OldCurrency = Currency;
 	Currency = FMath::Clamp(Currency + Delta, 0 , 999);
 
@@ -97,7 +112,7 @@ int32 ACBPlayerState::GetPoints_Implementation() const
 
 bool ACBPlayerState::HasEnoughCurrency_Implementation(int32 AmountToCheck)
 {
-	return Currency >= AmountToCheck;
+	return (Currency >= AmountToCheck) || CVarInfiniteMoney.GetValueOnAnyThread() > 0;
 }
 
 float ACBPlayerState::GetPlayerReputation_Implementation() const

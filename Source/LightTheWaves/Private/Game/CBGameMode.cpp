@@ -169,6 +169,17 @@ void ACBGameMode::OnMonsterDestroyed(AActor* DestroyedMonster)
 	Monsters.RemoveAll([=](const AActor* Actor) { return Actor == nullptr; });
 }
 
+void ACBGameMode::ClearDebris()
+{
+	TArray<AActor*> OutActors;
+	UGameplayStatics::GetAllActorsWithTag(this, "Debris", OutActors);
+
+	for (const auto Actor : OutActors)
+	{
+		Actor->Destroy();
+	}
+}
+
 float ACBGameMode::GetBoatSpawnPeriod()
 {
 	float BoatSpawnPeriod;
