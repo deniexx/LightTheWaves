@@ -78,9 +78,17 @@ void ACBPhysicalButton::OnOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 		{
 			DrawDebugSphere(GetWorld(), GetActorLocation(), 12, 12, FColor::Blue, true, 3.f);
 		}
-		
-		OnButtonActivated();
-		UGameplayStatics::PlaySoundAtLocation(this, ClickSound, GetActorLocation(), FRotator::ZeroRotator);
+
+		if (bCanActivate)
+		{
+			bCanActivate = false;
+			OnButtonActivated();
+			UGameplayStatics::PlaySoundAtLocation(this, ClickSound, GetActorLocation(), FRotator::ZeroRotator);
+			FTimerHandle Handle;
+			FTimerDelegate Delegate;
+			Delegate.BindLambda([=]() { bCanActivate = true; });
+			GetWorldTimerManager().SetTimer(Handle, Delegate, 0.5f, false);
+		}
 	}
 }
 
