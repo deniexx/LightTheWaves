@@ -155,6 +155,7 @@ void ACBMonsterHazard::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 		Data.EndLocation = GetActorLocation() - (GetActorUpVector() * 600.f);
 		UCBMoveActorToAction* MoveActorTo = UCBMoveActorToAction::Execute(this, this, Data);
 		MoveActorTo->OnActorFinishedMoving.AddDynamic(this, &ThisClass::DestroyAfterSubmerge);
+		SetActorEnableCollision(false);
 	}
 }
 

@@ -36,6 +36,11 @@ public:
 	virtual FOnNewPathChosen& NewPathChosenEvent() override;
 	virtual USplineComponent* GetPath_Implementation() override;
 	/** End Pathing Actor Interface */
+
+	/** Nav Agent Interface */
+	virtual const FNavAgentProperties& GetNavAgentPropertiesRef() const override;
+	virtual FVector GetNavAgentLocation() const override;
+	/** End Nav Agent Interface */
 	
 	/** Light Interactor interface */
 	virtual void OnLightFocused_Implementation(UPrimitiveComponent* TargetComponent) override;
@@ -168,6 +173,9 @@ protected:
 	void Die(EDestroyingObject DestroyingObject);
 
 private:
+
+	UPROPERTY()
+	FNavAgentProperties NavAgentProperties;
 
 	UPROPERTY(VisibleAnywhere, Category = "Boat Properties")
 	EBoatPathingState CurrentPathingState = EBoatPathingState::None;

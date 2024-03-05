@@ -208,13 +208,14 @@ float ACBGameMode::GetBoatSpawnPeriod()
 void ACBGameMode::SpawnBoat(AActor* PathActor)
 {
 	FActorSpawnParameters SpawnParameters;
+	USplineComponent* Path = ICBPath::Execute_GetPath(PathActor);
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	AActor* Boat = GetWorld()->SpawnActor<AActor>(GetRandomSpawnableBoat(), SpawnParameters);
+	AActor* Boat = GetWorld()->SpawnActor<AActor>(GetRandomSpawnableBoat(), Path->GetWorldLocationAtSplinePoint(0), FRotator::ZeroRotator,  SpawnParameters);
 	if (Boat)
 	{
 		Boats.Add(Boat);
 		Boat->OnDestroyed.AddDynamic(this, &ThisClass::OnBoatDestroyed);
-		ICBPathingActor::Execute_SetPath(Boat, ICBPath::Execute_GetPath(PathActor));
+		ICBPathingActor::Execute_SetPath(Boat, Path);
 		ICBPath::Execute_RegisterBoatOnPath(PathActor, Boat);
 	}
 }

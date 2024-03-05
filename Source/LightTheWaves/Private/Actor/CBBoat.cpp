@@ -50,6 +50,8 @@ void ACBBoat::BeginPlay()
 	Super::BeginPlay();
 
 	Health = MaxHealth;
+	NavAgentProperties = NavAgentProperties.DefaultProperties;
+	NavAgentProperties.AgentRadius = SphereTrigger->GetUnscaledSphereRadius();
 }
 
 // Called every frame
@@ -200,6 +202,16 @@ USplineComponent* ACBBoat::GetPath_Implementation()
 	return CurrentPath;
 }
 
+const FNavAgentProperties& ACBBoat::GetNavAgentPropertiesRef() const
+{
+	return NavAgentProperties;
+}
+
+FVector ACBBoat::GetNavAgentLocation() const
+{
+	return GetActorLocation();
+}
+
 void ACBBoat::OnLightFocused_Implementation(UPrimitiveComponent* TargetComponent)
 {
 	if (IsFollowingLight())
@@ -268,7 +280,8 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 	{
 		LeaveDebris(GetActorLocation());
 	}
-	
+
+	SetActorEnableCollision(false);
 	OnPathingActorLeftPath.Broadcast(this);
 	
 	if (DestroyingObject != EDestroyingObject::Port)
