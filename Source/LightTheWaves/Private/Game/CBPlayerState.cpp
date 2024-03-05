@@ -81,6 +81,7 @@ void ACBPlayerState::ApplyChangeToPlayerReputation_Implementation(float Delta)
 	if (OldReputation != Reputation)
 	{
 		OnReputationChanged.Broadcast(OldReputation, Reputation, MaxReputation);
+		UE_LOG(CBLog, Log, TEXT("Reputation changed! OldReputation: [%f], CurrentReputation: [%f], Delta: [%f]."), OldReputation, Reputation, Reputation - OldReputation);
 	}
 
 	if (Reputation <= 0.001f)
