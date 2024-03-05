@@ -276,7 +276,7 @@ bool ACBGameMode::IsAtMaxBoats()
 
 void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
 {
-	//++WaveNumber;
+	++WaveNumber;
 	WaveNumber = 1;
 	GetWorldTimerManager().SetTimer(WaveTimerHandle, this, &ThisClass::WaveTimer_Elapsed, WaveDuration, false);
 
@@ -314,7 +314,7 @@ void ACBGameMode::WaveTimer_Elapsed()
 void ACBGameMode::RecessTimer_Elapsed()
 {
 	RecessTimerHandle.Invalidate();
-	//StartNewWave();
+	StartNewWave();
 	
 	// @TODO: Add a finish screen for the demo
 }
