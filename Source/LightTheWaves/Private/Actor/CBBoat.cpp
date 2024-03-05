@@ -8,7 +8,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "Interface/CBPathProvider.h"
 #include "LightTheWaves/LightTheWaves.h"
-#include "NavigationPath.h"
 #include "NavigationSystem.h"
 #include "Async/CBMoveActorToAction.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -25,10 +24,19 @@ static TAutoConsoleVariable<int32> CVarDrawDebugBoatPathing(
 	ECVF_Cheat
 );
 
+static TAutoConsoleVariable<int32> CVarCustomBoatPathing(
+	TEXT("CB.CustomBoatPathing"),
+	0,
+	TEXT("Enables/Disables Custom Boat Pathing(our own solution)")
+	TEXT(" 0: Custom Boat Pathing is NOT enabled/n")
+	TEXT(" 1: Custom Boat Pathing is enabled/n"),
+	ECVF_Cheat
+);
+
 // Sets default values
 ACBBoat::ACBBoat()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	SphereTrigger = CreateDefaultSubobject<USphereComponent>(FName("SphereTrigger"));
@@ -107,44 +115,120 @@ void ACBBoat::FollowPath(float DeltaTime)
 	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
 }
 
+void ACBBoat::VisualisePath()
+{
+	const float ActorZ = GetActorLocation().Z;
+	BoatPathingVisSpline->ClearSplinePoints();
+	for (const auto& Point : ReturnToPathPoints)
+	{
+		const FVector TargetPoint = FVector(Point.X, Point.Y, ActorZ);
+		BoatPathingVisSpline->AddSplinePoint(TargetPoint, ESplineCoordinateSpace::World);
+	}
+	CurrentPath = BoatPathingVisSpline;
+	AddInstancedMeshesForPathVis();
+}
+
 void ACBBoat::GenerateNewPath()
 {
 	const bool bDrawDebug = CVarDrawDebugBoatPathing.GetValueOnAnyThread() > 0;
-	if (!TargetSpline)
+	const bool bUseCustomBoatPathing = CVarCustomBoatPathing.GetValueOnAnyThread() > 0;
+	if (!bUseCustomBoatPathing)
 	{
-		TargetSpline = ICBPathProvider::Execute_GetClosestPath(GetWorld()->GetAuthGameMode(), this);
+		GeneratePathUsingNavSystem(bDrawDebug);
 	}
+	else
+	{
+		GeneratePathCustom(bDrawDebug);
+	}
+}
+
+void ACBBoat::GeneratePathCustom(bool bDrawDebug)
+{
+	const FVector DesiredLocation = FindDesiredLocation(bDrawDebug);
+
+	// Check for obstacles on path
+	ReturnToPathPoints.Empty();
+	ReturnToPathPoints.Add(GetActorLocation());
+	TArray<FHitResult> HitResults;
+	const TArray<AActor*> ActorsToIgnore = { this };
+	const float Radius = SphereTrigger->GetScaledSphereRadius();
+	if (UKismetSystemLibrary::SphereTraceMultiForObjects(GetWorld(), GetActorLocation(), DesiredLocation, Radius, ObjectTypesToQuery, false, ActorsToIgnore, EDrawDebugTrace::None, HitResults, true))
+	{
+		// If obstacles have been found, find an offset vector and add it to the path points array
+		for (int32 Index = 0; Index < HitResults.Num(); ++Index)
+		{
+			// Determine if the vector is right leaning, if so offset to the right, else offset to the left
+			// @TODO: Improve how this is determined as using the normal is not ideal, it can lead to many problems
+			const bool bRightLeaning = FVector::DotProduct(HitResults[Index].ImpactNormal, FVector::RightVector) > 0;
+			const FVector CorrectionDirection = bRightLeaning ? FVector::RightVector : FVector::LeftVector;
+			const FBox Extend = HitResults[Index].GetActor()->GetComponentsBoundingBox(false, true);
+			const FVector CorrectionLocation = HitResults[Index].ImpactPoint + (CorrectionDirection * (Radius + CorrectionDistanceOffset + Extend.GetExtent().Y / 2));
+			ReturnToPathPoints.Add(CorrectionLocation);
+			if (UKismetSystemLibrary::SphereTraceMultiForObjects(GetWorld(), CorrectionLocation, DesiredLocation, Radius, ObjectTypesToQuery, false, ActorsToIgnore, EDrawDebugTrace::None, HitResults, true))
+			{
+				Index = 0;
+			}
+		}
+	}
+
+	// Add Last location to the path point array
+	ReturnToPathPoints.Add(DesiredLocation);
+	VisualisePath();
+}
+
+void ACBBoat::GeneratePathUsingNavSystem(bool bDrawDebug)
+{
+	const FVector DesiredLocation = FindDesiredLocation(bDrawDebug);
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	
+	if (CurrentQueryIndex != INDEX_NONE)
+	{
+		NavSys->AbortAsyncFindPathRequest(CurrentQueryIndex);
+	}
+	
+	FPathFindingQuery Query;
+	Query.StartLocation = GetActorLocation();
+	Query.NavData = NavSys->GetNavDataForProps(GetNavAgentPropertiesRef(), GetActorLocation(), GetComponentsBoundingBox().GetExtent());
+	Query.EndLocation = DesiredLocation;
+	Query.SetNavAgentProperties(GetNavAgentPropertiesRef());
+	Query.QueryFilter = UNavigationQueryFilter::GetQueryFilter(*Query.NavData, this, nullptr);
+	FNavPathQueryDelegate Delegate;
+	Delegate.BindUObject(this, &ThisClass::OnPathQueryFinished);
+	CurrentQueryIndex = NavSys->FindPathAsync(GetNavAgentPropertiesRef(), Query, Delegate);
+}
+
+void ACBBoat::OnPathQueryFinished(uint32 QueryID, ENavigationQueryResult::Type QueryResult,
+	TSharedPtr<FNavigationPath> NavigationPath)
+{
+	if (QueryResult == ENavigationQueryResult::Success)
+	{
+		ReturnToPathPoints.Empty();
+		for (const auto& PathPoint : NavigationPath->GetPathPoints())
+		{
+			ReturnToPathPoints.Add(PathPoint.Location);
+			PointIndex = 0;
+		}
+
+		VisualisePath();
+	}
+
+	UE_LOG(CBLog, Warning, TEXT("Boat failed to generate path! This might be very bad, someone should take a look!"));
+	CurrentQueryIndex = INDEX_NONE;
+}
+
+FVector ACBBoat::FindDesiredLocation(const bool bDrawDebug)
+{
+	TargetSpline = ICBPathProvider::Execute_GetClosestPath(GetWorld()->GetAuthGameMode(), this);
 	FVector DesiredLocation = TargetSpline->GetLocationAtSplinePoint(TargetSpline->GetNumberOfSplinePoints() - 1, ESplineCoordinateSpace::World);
 	DesiredLocation.Z = GetActorLocation().Z;
-	
+
 	if (bDrawDebug)
 	{
 		DrawDebugSphere(GetWorld(), DesiredLocation, 8, 8, FColor::Yellow, false, 5);
 	}
-	if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), DesiredLocation))
-	{
-		ReturnToPathPoints = MoveTemp(NavPath->PathPoints);
-		PointIndex = 0;
-		if (ReturnToPathPoints.Num() > 0)
-		{
-			CachedDestination = ReturnToPathPoints[ReturnToPathPoints.Num() - 1];
-		}
-		const float ActorZ = GetActorLocation().Z;
-		CachedDestination.Z = ActorZ;
-
-		BoatPathingVisSpline->ClearSplinePoints();
-		for (const auto& Point : ReturnToPathPoints)
-		{
-			const FVector TargetPoint = FVector(Point.X, Point.Y, ActorZ);
-			BoatPathingVisSpline->AddSplinePoint(TargetPoint, ESplineCoordinateSpace::World);
-			if (bDrawDebug)
-			{
-				DrawDebugSphere(GetWorld(), TargetPoint, 8, 8, FColor::Yellow, false, 5);
-			}
-		}
-		CurrentPath = BoatPathingVisSpline;
-		AddInstancedMeshesForPathVis();
-	}
+	
+	CachedDestination = DesiredLocation;
+	return DesiredLocation;
 }
 
 void ACBBoat::OrientRotationToMovement(float DeltaTime)

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #define ECC_3DWidget ECC_GameTraceChannel1
+#define ECC_Rocks ECC_GameTraceChannel4
 
 #define TEST_BIT(Bitmask, Bit) (((Bitmask) & (1 << static_cast<uint8>(Bit))) > 0)
 

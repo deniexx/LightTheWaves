@@ -17,6 +17,15 @@ static TAutoConsoleVariable<int32> CVarInfiniteMoney(
 	ECVF_Cheat
 );
 
+static TAutoConsoleVariable<int32> CVarGodMode(
+	TEXT("CB.GodMode"),
+	0,
+	TEXT("Enabled/Disables god mode (cannot lose reputation)")
+	TEXT(" 0: God Mode NOT enabled/n")
+	TEXT(" 1: God MOde is enabled/n"),
+	ECVF_Cheat
+);
+
 void ACBPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
@@ -64,6 +73,12 @@ void ACBPlayerState::ApplyChangeToCurrency_Implementation(int32 Delta)
 
 void ACBPlayerState::ApplyChangeToPoints_Implementation(int32 Delta)
 {
+	const bool bGodMode = CVarGodMode.GetValueOnAnyThread() > 0;
+	if (bGodMode)
+	{
+		return;
+	}
+	
 	const int32 OldPoints = Points;
 	Points = FMath::Clamp(Points + Delta, 0 , 1000000);
 

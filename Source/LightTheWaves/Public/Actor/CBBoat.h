@@ -75,7 +75,6 @@ public:
 #endif
 	
 protected:
-
 	virtual void BeginPlay() override;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -152,6 +151,9 @@ protected:
 	float RedrawInstancedMeshDelay = 0.2f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	float CorrectionDistanceOffset = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TObjectPtr<UStaticMesh> BoatPathingVisMesh;
 	
 	/** The debris actor to be spawned when the boat has been destroyed */
@@ -160,6 +162,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties", meta = (Bitmask, BitmaskEnum="EDestroyingObject"))
 	uint8 DebrisLeavingObjects;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypesToQuery;
 
 	UPROPERTY(BlueprintAssignable, Category = "Boat Properties")
 	FOnPathingActorLeftPath OnPathingActorLeftPath;
@@ -171,6 +176,8 @@ protected:
 	void DestroyOnFinishedMoving(AActor* MovingActor);
 	
 	void Die(EDestroyingObject DestroyingObject);
+	
+	void SwitchBoatPathing(IConsoleVariable* ConsoleVariable);
 
 private:
 
@@ -200,7 +207,12 @@ private:
 
 	void FollowLight(float DeltaTime);
 	void FollowPath(float DeltaTime);
+	void VisualisePath();
 	void GenerateNewPath();
+	void GeneratePathCustom(bool bDrawDebug);
+	void GeneratePathUsingNavSystem(bool bDrawDebug);
+	void OnPathQueryFinished(uint32 QueryID, ENavigationQueryResult::Type QueryResult, TSharedPtr<FNavigationPath> NavigationPath);
+	FVector FindDesiredLocation(bool bDrawDebug);
 
 	void SetState(EBoatPathingState NewState);
 
@@ -224,6 +236,8 @@ private:
 	FORCEINLINE bool IsNotFollowingLight() const { return CurrentPathingState != EBoatPathingState::FollowingLight; }
 
 	float Health;
+
+	int32 CurrentQueryIndex = INDEX_NONE;
 	
 public:
 	
