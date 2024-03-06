@@ -60,6 +60,8 @@ void ACBBoat::BeginPlay()
 	Health = MaxHealth;
 	NavAgentProperties = NavAgentProperties.DefaultProperties;
 	NavAgentProperties.AgentRadius = SphereTrigger->GetUnscaledSphereRadius();
+
+	UGameplayStatics::PlaySoundAtLocation(this, BoatSpawnSound, GetActorLocation());
 }
 
 // Called every frame

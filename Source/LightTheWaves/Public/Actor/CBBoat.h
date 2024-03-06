@@ -155,6 +155,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TObjectPtr<UStaticMesh> BoatPathingVisMesh;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	TObjectPtr<USoundBase> BoatSpawnSound;
 	
 	/** The debris actor to be spawned when the boat has been destroyed */
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
