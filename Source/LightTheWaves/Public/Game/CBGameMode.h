@@ -8,6 +8,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "Interface/CBWaveDirector.h"
 #include "FMonsterSpawnerSettings.h"
+#include "Interface/CBInitialiserInterface.h"
 #include "CBGameMode.generated.h"
 
 USTRUCT(BlueprintType)
@@ -130,7 +131,7 @@ class USplineComponent;
  * 
  */
 UCLASS()
-class LIGHTTHEWAVES_API ACBGameMode : public AGameModeBase, public ICBPathProvider, public ICBWaveDirector
+class LIGHTTHEWAVES_API ACBGameMode : public AGameModeBase, public ICBPathProvider, public ICBWaveDirector, public ICBInitialiserInterface
 {
 	GENERATED_BODY()
 
@@ -146,6 +147,10 @@ public:
 	virtual void StartWaveGameplay_Implementation() override;
 	virtual FOnActivityStateUpdated& OnActivityStateUpdatedEvent() override;
 	/** End Wave Director Interface */
+
+	/** Initialiser Interface */
+	void Init_Implementation(const FInitData& InitData) override;
+	/** End Initialiser Interface */
 	
 protected:
 
@@ -204,7 +209,13 @@ protected:
 	UFUNCTION(Exec)
 	void ClearDebris();
 
+	UFUNCTION(BlueprintNativeEvent)
+	void OnGameFinished(const FGameLostData& Data);
+
 private:
+
+	UFUNCTION()
+	void GameFinished(const FGameLostData& Data);
 	
 	float GetBoatSpawnPeriod();
 	void SpawnBoat(AActor* PathActor);
@@ -252,6 +263,9 @@ private:
 
 	UPROPERTY()
 	TArray<AActor*> Monsters;
+
+	UPROPERTY()
+	AActor* Boss;
 
 	AActor* GetRandomSpline(USplineComponent*& OutSplineComponent);
 	AActor* GetSplineClosestToLocation(const FVector& Location, USplineComponent*& OutSplineComponent);

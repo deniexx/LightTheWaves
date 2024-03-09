@@ -5,11 +5,15 @@
 
 #include "CBBlueprintFunctionLibrary.h"
 #include "CBInitialiser.h"
+#include "EngineUtils.h"
 #include "Actor/CBBoat.h"
+#include "Actor/CBMonsterHazard.h"
 #include "Async/CBMonsterSpawnerAction.h"
 #include "Components/SplineComponent.h"
 #include "Interface/CBPath.h"
+#include "Interface/CBPlayerInterface.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerState.h"
 #include "LightTheWaves/LightTheWaves.h"
 
 #define BOAT_SPAWN_FORMULA(WaveNumber) WaveNumber
@@ -31,6 +35,11 @@ FOnActivityStateUpdated& ACBGameMode::OnActivityStateUpdatedEvent()
 	return OnActivityStateUpdated;
 }
 
+void ACBGameMode::Init_Implementation(const FInitData& InitData)
+{
+	Cast<ICBPlayerInterface>(InitData.PlayerState)->OnGameLostEvent().AddDynamic(this, &ThisClass::GameFinished);
+}
+
 void ACBGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -44,8 +53,48 @@ void ACBGameMode::BeginPlay()
 	}
 	else
 	{
+		Initialiser->RegisterObjectToInitialiser(this);
 		Initialiser->RegisterGameMode(this);
 	}
+}
+
+void ACBGameMode::OnGameFinished_Implementation(const FGameLostData& Data)
+{
+	// Implemented in blueprints
+}
+
+void ACBGameMode::GameFinished(const FGameLostData& Data)
+{
+	GetWorldTimerManager().ClearTimer(BoatSpawnTimerHandle);
+	GetWorldTimerManager().ClearTimer(MonsterSpawnTimerHandle);
+	GetWorldTimerManager().ClearTimer(BossSpawnTimerHandle);
+	
+	for (TActorIterator<ACBBoat> It(GetWorld()); It; ++It)
+	{
+		ACBBoat* Boat = *It;
+		if (Boat)
+		{
+			Boat->Destroy();
+		}
+	}
+
+	for (TActorIterator<ACBMonsterHazard> It(GetWorld()); It; ++It)
+	{
+		// @TODO: Change this to a submerge function potentially
+		ACBMonsterHazard* Hazard = *It;
+		if (IsValid(Hazard))
+		{
+			Hazard->Destroy();
+		}
+	}
+
+	if (IsValid(Boss))
+	{
+		// @TODO: When boss reiteration happens, make sure that the boss has a going back down animation, which can be played here
+		Boss->Destroy();
+	}
+	
+	OnGameFinished(Data);	
 }
 
 void ACBGameMode::TestGameplay()
@@ -332,7 +381,7 @@ void ACBGameMode::SpawnBoss()
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	// @TODO: Figure out a way to know where the boss should spawn, probably a variable on the spawn settings
 	const FVector SpawnLocation = FVector(-458.000000,7278.000000,3450.000000);
-	AActor* BossActor = GetWorld()->SpawnActor<AActor>(BossSpawningSettings.BossActorClass, SpawnLocation, FRotator::ZeroRotator, SpawnParameters);
+	Boss = GetWorld()->SpawnActor<AActor>(BossSpawningSettings.BossActorClass, SpawnLocation, FRotator::ZeroRotator, SpawnParameters);
 
 	FActivityStateUpdatedData Data;
 	Data.OldActivity = EGameActivity::Wave;
@@ -340,7 +389,7 @@ void ACBGameMode::SpawnBoss()
 	Data.ActivityFinishedState = EActivityFinishedState::Ongoing;
 	OnActivityStateUpdated.Broadcast(Data);
 
-	BossActor->OnDestroyed.AddDynamic(this, &ThisClass::OnBossKilled);
+	Boss->OnDestroyed.AddDynamic(this, &ThisClass::OnBossKilled);
 }
 
 void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
@@ -355,7 +404,7 @@ void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
 	UE_LOG(CBLog, Log, TEXT("Boss Defeated!"));
 
 	// @TODO: Remove this shit ASAP
-	ProcessBossSpawning();
+	Boss = nullptr;
 }
 
 float ACBGameMode::GetRoundTimeElapsed() const

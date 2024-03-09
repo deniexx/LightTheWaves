@@ -26,6 +26,11 @@ void UCBMoveActorToAction::Tick(float DeltaTime)
 {
 	if (LastFrameNumberWeTicked == GFrameCounter || bInterpFinished || !MovingActor)
 	{
+		if (!MovingActor)
+		{
+			SetReadyToDestroy();
+		}
+		
 		return;
 	}
 	

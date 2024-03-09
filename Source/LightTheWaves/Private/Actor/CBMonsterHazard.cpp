@@ -119,7 +119,10 @@ void ACBMonsterHazard::OnNewPathChosen(USplineComponent* NewPath)
 			Data.InterpDuration = 2.f;
 			Data.EndLocation = GetActorLocation() - (GetActorUpVector() * 600.f);
 			UCBMoveActorToAction* MoveActorTo = UCBMoveActorToAction::Execute(this, this, Data);
-			MoveActorTo->OnActorFinishedMoving.AddDynamic(this, &ThisClass::OnMonsterFinishedSubmerging);
+			if (IsValid(this))
+			{
+				MoveActorTo->OnActorFinishedMoving.AddDynamic(this, &ThisClass::OnMonsterFinishedSubmerging);
+			}
 		}
 	}
 }

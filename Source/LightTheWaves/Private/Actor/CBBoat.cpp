@@ -378,7 +378,10 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 		Data.EndLocation = GetActorLocation() - (GetActorUpVector() * SinkingZOffset);
 		Data.InterpDuration = 2.f;
 		UCBMoveActorToAction* Action = UCBMoveActorToAction::Execute(this, this, Data);
-		Action->OnActorFinishedMoving.AddDynamic(this, &ThisClass::DestroyOnFinishedMoving);
+		if (IsValid(this))
+		{
+			Action->OnActorFinishedMoving.AddDynamic(this, &ThisClass::DestroyOnFinishedMoving);
+		}
 	}
 	else
 	{
