@@ -32,7 +32,6 @@ public:
 	virtual void IncreaseCapacity_Implementation(int32 IncreaseAmount) override;
 	virtual bool CanReload_Implementation() override;
 	virtual void Reload_Implementation(bool bMortar) override;
-	virtual void MortarReload_Implementation() override;
 	virtual void AddStoredAmmo_Implementation(int32 IncreaseAmount) override;
 	/** End Gun Interface */
 
