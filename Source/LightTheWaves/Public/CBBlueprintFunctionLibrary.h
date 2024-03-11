@@ -41,4 +41,10 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
 	static UCBShopSubsystem* GetShopSubsystem(UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
+	static bool ShouldPlayTutorial(UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintCallable, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
+	static void SetTutorialEnabled(UObject* WorldContextObject, bool bEnabled);	
 };

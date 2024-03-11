@@ -4,6 +4,7 @@
 #include "CBBlueprintFunctionLibrary.h"
 
 #include "CBInitialiser.h"
+#include "Game/CBGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Subsystem/CBShopSubsystem.h"
 
@@ -34,4 +35,22 @@ UCBShopSubsystem* UCBBlueprintFunctionLibrary::GetShopSubsystem(UObject* WorldCo
 		return GameInstance->GetSubsystem<UCBShopSubsystem>();
 	}
 	return nullptr;
+}
+
+bool UCBBlueprintFunctionLibrary::ShouldPlayTutorial(UObject* WorldContextObject)
+{
+	AGameModeBase* GameMode = UGameplayStatics::GetGameMode(WorldContextObject);
+	const ACBGameMode* CBGameMode = GameMode ? Cast<ACBGameMode>(GameMode) : nullptr;
+
+	return CBGameMode ? CBGameMode->bPlayTutorial : false;
+}
+
+void UCBBlueprintFunctionLibrary::SetTutorialEnabled(UObject* WorldContextObject, bool bEnabled)
+{
+	AGameModeBase* GameMode = UGameplayStatics::GetGameMode(WorldContextObject);
+	ACBGameMode* CBGameMode = GameMode ? Cast<ACBGameMode>(GameMode) : nullptr;
+	if (CBGameMode)
+	{
+		CBGameMode->bPlayTutorial = bEnabled;
+	}
 }
