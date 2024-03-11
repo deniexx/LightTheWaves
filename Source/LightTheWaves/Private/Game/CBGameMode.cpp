@@ -17,8 +17,6 @@
 #include "LightTheWaves/LightTheWaves.h"
 
 #define BOAT_SPAWN_FORMULA(WaveNumber) WaveNumber
-#define MAX_BOATS_PER_PATH_FORMULA(WaveNumber) 1
-#define MONSTER_SPAWN_FORMULA(WaveNumber) WaveNumber
 
 class UCBInitialiser;
 static TAutoConsoleVariable<int32> CVarDrawDebugMonsterSpawn(
@@ -174,22 +172,7 @@ void ACBGameMode::OnBoatDestroyed(AActor* DestroyedBoat)
 
 void ACBGameMode::ProcessMonsterSpawning()
 {
-	float MonsterSpawnPeriod;
-
-	if (MonsterSpawningSettings.bUseCurveForMonsterSpawnPeriod && WaveNumberToSwitchToFormula >= WaveNumber)
-	{
-		MonsterSpawnPeriod = MonsterSpawningSettings.MonsterSpawnCurve.Eval(GetPercentRoundTimeElapsed(), "");
-	}
-	else if (!MonsterSpawningSettings.bUseCurveForMonsterSpawnPeriod && MonsterSpawningSettings.MonsterSpawnPeriods.Num() >= WaveNumber)
-	{
-		MonsterSpawnPeriod = MonsterSpawningSettings.MonsterSpawnPeriods[WaveNumber - 1];
-	}
-	else
-	{
-		MonsterSpawnPeriod = MONSTER_SPAWN_FORMULA(WaveNumber);
-	}
-
-	MonsterSpawnPeriod += + FMath::FRandRange(MonsterSpawningSettings.MinTimeVariation, MonsterSpawningSettings.MaxTimeVariation);
+	const float MonsterSpawnPeriod = MonsterSpawningSettings.MonsterSpawnPeriod + FMath::FRandRange(MonsterSpawningSettings.MinTimeVariation, MonsterSpawningSettings.MaxTimeVariation);
 	GetWorldTimerManager().SetTimer(MonsterSpawnTimerHandle, this, &ThisClass::SpawnMonster, MonsterSpawnPeriod, false);
 }
 
@@ -327,9 +310,8 @@ bool ACBGameMode::IsAtMaxBoats()
 void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
 {
 	++WaveNumber;
-	WaveNumber = 1;
 	GetWorldTimerManager().SetTimer(WaveTimerHandle, this, &ThisClass::WaveTimer_Elapsed, WaveDuration, false);
-
+	
 	FActivityStateUpdatedData Data;
 	Data.OldActivity = PreviousActivity;
 	Data.NewActivity = EGameActivity::Wave;
@@ -343,10 +325,11 @@ void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
 
 void ACBGameMode::WaveTimer_Elapsed()
 {
-	/* @TODO: Track if the player is still in combat with the boss, do not start the recess period until the fight is over
-	 * @TODO: or "kill" the boss ourselves
-	 */
-	
+	if (Boss)
+	{
+		bNextWaveWaitingForBoss = true;
+		return;
+	}
 	GetWorldTimerManager().ClearTimer(BoatSpawnTimerHandle);
 	GetWorldTimerManager().ClearTimer(MonsterSpawnTimerHandle);
 	GetWorldTimerManager().ClearTimer(BossSpawnTimerHandle);
@@ -365,8 +348,6 @@ void ACBGameMode::RecessTimer_Elapsed()
 {
 	RecessTimerHandle.Invalidate();
 	StartNewWave();
-	
-	// @TODO: Add a finish screen for the demo
 }
 
 void ACBGameMode::ProcessBossSpawning()
@@ -394,17 +375,21 @@ void ACBGameMode::SpawnBoss()
 
 void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
 {
-	// @TODO: Advance game and whatever else needs to be done
+	UE_LOG(CBLog, Log, TEXT("Boss Defeated!"));
+	Boss = nullptr;
+	
+	if (bNextWaveWaitingForBoss)
+	{
+		bNextWaveWaitingForBoss = false;
+		StartNewWave();
+		return;
+	}
+	
 	FActivityStateUpdatedData Data;
 	Data.ActivityFinishedState = EActivityFinishedState::Successful;
 	Data.OldActivity = EGameActivity::Boss;
 	Data.NewActivity = EGameActivity::Wave;
 	OnActivityStateUpdated.Broadcast(Data);
-
-	UE_LOG(CBLog, Log, TEXT("Boss Defeated!"));
-
-	// @TODO: Remove this shit ASAP
-	Boss = nullptr;
 }
 
 float ACBGameMode::GetRoundTimeElapsed() const

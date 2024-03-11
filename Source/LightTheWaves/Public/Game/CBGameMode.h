@@ -23,7 +23,7 @@ struct FBoatSpawningSettings
 	/** The maximum number of boats to spawned per round (goes towards the second value throughout the round) */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats")
 	TArray<FVector2D> MaxBoats;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (Units = "cm"))
 	float MinimumDistanceFromPathStart = 300.f;
 
@@ -68,7 +68,7 @@ struct FBoatSpawningSettings
 	/** A curve of period of boat spawning(duration between spawns X: Start of Round, Y: End of Round) to wave number */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "!bUseCurveForBoatSpawnAmount", EditConditionHides))
 	TArray<FVector2D> BoatSpawnPeriods;
-
+	
 	/** A curve of period of boat spawning(duration between spawns) to wave number */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boats", meta = (EditCondition = "bUseCurveForBoatSpawnAmount", EditConditionHides))
 	FCurveTableRowHandle StartOfRoundBoatSpawnCurve;
@@ -98,11 +98,8 @@ struct FMonsterSpawningSettings
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	bool bUseCurveForMonsterSpawnPeriod = false;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="!bUseCurveForMonsterSpawnPeriod", EditConditionHides))
-	TArray<float> MonsterSpawnPeriods;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters", meta = (EditCondition="bUseCurveForMonsterSpawnPeriod", EditConditionHides))
-	FCurveTableRowHandle MonsterSpawnCurve;
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
+	float MonsterSpawnPeriod;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	FMonsterSpawnerParams SpawnParams;
@@ -142,7 +139,7 @@ public:
 	virtual USplineComponent* GetClosestPath_Implementation(AActor* ReferenceActor) override;
 	virtual void RegisterPathingActorWithPath_Implementation(AActor* ActorToRegister, USplineComponent* TargetPath) override;
 	/** End Path Provider Interface */
-
+	
 	/** Wave Director Interface */
 	virtual void StartWaveGameplay_Implementation() override;
 	virtual FOnActivityStateUpdated& OnActivityStateUpdatedEvent() override;
@@ -151,6 +148,9 @@ public:
 	/** Initialiser Interface */
 	void Init_Implementation(const FInitData& InitData) override;
 	/** End Initialiser Interface */
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
+	bool bPlayTutorial;
 	
 protected:
 
@@ -225,7 +225,7 @@ private:
 	void ProcessBossSpawning();
 	bool TrySpawnBoat();
 	bool IsAtMaxBoats();
-	
+
 	void StartNewWave(EGameActivity PreviousActivity = EGameActivity::None);
 	
 	float GetRoundTimeElapsed() const;
@@ -267,6 +267,8 @@ private:
 	UPROPERTY()
 	AActor* Boss;
 
+	bool bNextWaveWaitingForBoss = false;
+	
 	AActor* GetRandomSpline(USplineComponent*& OutSplineComponent);
 	AActor* GetSplineClosestToLocation(const FVector& Location, USplineComponent*& OutSplineComponent);
 };
