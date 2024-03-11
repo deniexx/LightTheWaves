@@ -143,6 +143,10 @@ public:
 	/** Wave Director Interface */
 	virtual void StartWaveGameplay_Implementation() override;
 	virtual FOnActivityStateUpdated& OnActivityStateUpdatedEvent() override;
+	virtual FOnEntitySpawned& OnBoatSpawnedEvent() override;
+	virtual FOnEntitySpawned& OnMonsterSpawnedEvent() override;
+	virtual FOnEntitySpawned& OnBossSpawnedEvent() override;
+	virtual FOnGameStarted& OnGameStartedEvent() override;
 	/** End Wave Director Interface */
 
 	/** Initialiser Interface */
@@ -185,6 +189,18 @@ protected:
 	
 	UPROPERTY(BlueprintAssignable, Category = "Activity")
 	FOnActivityStateUpdated OnActivityStateUpdated;
+
+	UPROPERTY(BlueprintAssignable, Category = "Activity")
+	FOnEntitySpawned OnBoatSpawned;
+		
+	UPROPERTY(BlueprintAssignable, Category = "Activity")
+	FOnEntitySpawned OnMonsterSpawnedEnt;
+		
+	UPROPERTY(BlueprintAssignable, Category = "Activity")
+	FOnEntitySpawned OnBossSpawned;
+		
+	UPROPERTY(BlueprintAssignable, Category = "Activity")
+	FOnGameStarted OnGameStarted;
 
 	int32 WaveNumber = 0;
 

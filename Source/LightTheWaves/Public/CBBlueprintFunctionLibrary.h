@@ -6,6 +6,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CBBlueprintFunctionLibrary.generated.h"
 
+class FOnMonsterSpawned;
 class UCBShopSubsystem;
 class UCBInitialiser;
 /**
@@ -46,5 +47,5 @@ public:
 	static bool ShouldPlayTutorial(UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintCallable, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
-	static void SetTutorialEnabled(UObject* WorldContextObject, bool bEnabled);	
+	static void SetTutorialEnabled(UObject* WorldContextObject, bool bEnabled);
 };

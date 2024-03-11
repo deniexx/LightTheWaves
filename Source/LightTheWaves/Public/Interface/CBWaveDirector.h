@@ -48,6 +48,8 @@ struct FActivityStateUpdatedData
 	/** @NOTE: Add any additional data that needs to be sent here */
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameStarted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEntitySpawned, AActor*, Entity);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActivityStateUpdated, FActivityStateUpdatedData, ActivityStateUpdatedData);
 
 // This class does not need to be modified.
@@ -71,4 +73,9 @@ public:
 	void StartWaveGameplay();
 	
 	virtual FOnActivityStateUpdated& OnActivityStateUpdatedEvent() = 0;
+	virtual FOnEntitySpawned& OnBoatSpawnedEvent() = 0;
+	virtual FOnEntitySpawned& OnMonsterSpawnedEvent() = 0;
+	virtual FOnEntitySpawned& OnBossSpawnedEvent() = 0;
+	virtual FOnGameStarted& OnGameStartedEvent() = 0;
+	
 };
