@@ -268,6 +268,7 @@ void ACBPawn::Reload_Implementation(bool bMortar)
 	bMortarMode = bMortar;
 }
 
+
 void ACBPawn::AddStoredAmmo_Implementation(int32 IncreaseAmount)
 {
 	StoredMortarAmmo += IncreaseAmount;
