@@ -177,10 +177,11 @@ protected:
 
 	UFUNCTION()
 	void DestroyOnFinishedMoving(AActor* MovingActor);
+
+	UFUNCTION()
+	void DestroyAfterDither();
 	
 	void Die(EDestroyingObject DestroyingObject);
-	
-	void SwitchBoatPathing(IConsoleVariable* ConsoleVariable);
 
 private:
 

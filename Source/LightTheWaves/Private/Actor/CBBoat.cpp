@@ -9,6 +9,7 @@
 #include "Interface/CBPathProvider.h"
 #include "LightTheWaves/LightTheWaves.h"
 #include "NavigationSystem.h"
+#include "Async/CBDitherActor.h"
 #include "Async/CBMoveActorToAction.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "GameFramework/PlayerState.h"
@@ -60,6 +61,13 @@ void ACBBoat::BeginPlay()
 	Health = MaxHealth;
 	NavAgentProperties = NavAgentProperties.DefaultProperties;
 	NavAgentProperties.AgentRadius = SphereTrigger->GetUnscaledSphereRadius();
+
+	FDitherActorParams Params;
+	Params.Duration = 2.f;
+	Params.DitherMode = EDitherMode::DitherIn;
+	Params.TargetActor = this;
+	Params.TargetMesh = BoatMesh;
+	UCBDitherActor::Execute(this, Params);
 
 	UGameplayStatics::PlaySoundAtLocation(this, BoatSpawnSound, GetActorLocation());
 }
@@ -360,6 +368,11 @@ void ACBBoat::DestroyOnFinishedMoving(AActor* MovingActor)
 	Destroy();
 }
 
+void ACBBoat::DestroyAfterDither()
+{
+	Destroy();
+}
+
 void ACBBoat::Die(EDestroyingObject DestroyingObject)
 {
 	if (TEST_BIT(DebrisLeavingObjects, DestroyingObject))
@@ -386,7 +399,14 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 	else
 	{
 		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(UGameplayStatics::GetPlayerState(this, 0), ReputationRegain);
-		Destroy();
+
+		FDitherActorParams Params;
+		Params.Duration = 2.f;
+		Params.DitherMode = EDitherMode::DitherOut;
+		Params.TargetActor = this;
+		Params.TargetMesh = BoatMesh;
+		UCBDitherActor* DitherActor = UCBDitherActor::Execute(this, Params);
+		DitherActor->OnDitherFinished.AddDynamic(this, &ThisClass::DestroyAfterDither);
 	}
 	
 
