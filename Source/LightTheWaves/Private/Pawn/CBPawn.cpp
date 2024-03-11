@@ -274,6 +274,11 @@ void ACBPawn::AddStoredAmmo_Implementation(int32 IncreaseAmount)
 	StoredMortarAmmo += IncreaseAmount;
 }
 
+FOnAmmoExpended& ACBPawn::OnAmmoExpendedEvent()
+{
+	return OnAmmoExpended;
+}
+
 void ACBPawn::HookHandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other, UPrimitiveComponent* OtherComp,
                                    int OtherBodyIndex, bool bFromSweep, const FHitResult& HitResult)
 {
@@ -313,6 +318,10 @@ void ACBPawn::Shoot()
 			OnAmmoUpdated.Broadcast(MortarAmmo, MortarAmmoCapacity);
 			UGameplayStatics::PlaySoundAtLocation(this, MortarShootSound, ShootLocation->GetComponentLocation());
 		}
+		else
+		{
+			OnAmmoExpended.Broadcast();
+		}
 		return;
 	}
 	
@@ -327,6 +336,10 @@ void ACBPawn::Shoot()
 		}
 		UGameplayStatics::PlaySoundAtLocation(this, NormalShootSound, ShootLocation->GetComponentLocation());
 		OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
+	}
+	else
+	{
+		OnAmmoExpended.Broadcast();
 	}
 }
 

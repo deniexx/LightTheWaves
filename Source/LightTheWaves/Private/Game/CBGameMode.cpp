@@ -33,6 +33,26 @@ FOnActivityStateUpdated& ACBGameMode::OnActivityStateUpdatedEvent()
 	return OnActivityStateUpdated;
 }
 
+FOnEntitySpawned& ACBGameMode::OnBoatSpawnedEvent()
+{
+	return OnBoatSpawned;
+}
+
+FOnEntitySpawned& ACBGameMode::OnMonsterSpawnedEvent()
+{
+	return OnMonsterSpawnedEnt;
+}
+
+FOnEntitySpawned& ACBGameMode::OnBossSpawnedEvent()
+{
+	return OnBossSpawned;
+}
+
+FOnGameStarted& ACBGameMode::OnGameStartedEvent()
+{
+	return OnGameStarted;
+}
+
 void ACBGameMode::Init_Implementation(const FInitData& InitData)
 {
 	Cast<ICBPlayerInterface>(InitData.PlayerState)->OnGameLostEvent().AddDynamic(this, &ThisClass::GameFinished);
@@ -138,7 +158,8 @@ void ACBGameMode::StartWaveGameplay_Implementation()
 	{
 		return;
 	}
-	
+
+	OnGameStarted.Broadcast();
 	StartNewWave();
 }
 
@@ -186,6 +207,7 @@ void ACBGameMode::SpawnMonster()
 
 void ACBGameMode::OnMonsterSpawned(AActor* SpawnedMonster)
 {
+	OnMonsterSpawnedEnt.Broadcast(SpawnedMonster);
 	SpawnedMonster->OnDestroyed.AddDynamic(this, &ThisClass::OnMonsterDestroyed);
 	Monsters.Add(SpawnedMonster);
 }
@@ -249,6 +271,7 @@ void ACBGameMode::SpawnBoat(AActor* PathActor)
 		Boat->OnDestroyed.AddDynamic(this, &ThisClass::OnBoatDestroyed);
 		ICBPathingActor::Execute_SetPath(Boat, Path);
 		ICBPath::Execute_RegisterBoatOnPath(PathActor, Boat);
+		OnBoatSpawned.Broadcast(Boat);
 	}
 }
 
@@ -370,6 +393,7 @@ void ACBGameMode::SpawnBoss()
 	Data.ActivityFinishedState = EActivityFinishedState::Ongoing;
 	OnActivityStateUpdated.Broadcast(Data);
 
+	OnBossSpawned.Broadcast(Boss);
 	Boss->OnDestroyed.AddDynamic(this, &ThisClass::OnBossKilled);
 }
 

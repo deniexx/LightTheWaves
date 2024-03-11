@@ -13,6 +13,8 @@ class UCBGunInterface : public UInterface
 	GENERATED_BODY()
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAmmoExpended);
+
 /**
  * 
  */
@@ -34,6 +36,8 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void AddStoredAmmo(int32 IncreaseAmount = 1);
+
+	virtual FOnAmmoExpended& OnAmmoExpendedEvent() = 0;
 
 protected:
 

@@ -33,6 +33,7 @@ public:
 	virtual bool CanReload_Implementation() override;
 	virtual void Reload_Implementation(bool bMortar) override;
 	virtual void AddStoredAmmo_Implementation(int32 IncreaseAmount) override;
+	virtual FOnAmmoExpended& OnAmmoExpendedEvent() override;
 	/** End Gun Interface */
 
 protected:
@@ -180,6 +181,9 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly)
 	bool bMortarMode = false;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAmmoExpended OnAmmoExpended;
 	
 public:	
 	// Called every frame
