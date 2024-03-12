@@ -18,7 +18,6 @@
 
 #define BOAT_SPAWN_FORMULA(WaveNumber) WaveNumber
 
-class UCBInitialiser;
 static TAutoConsoleVariable<int32> CVarDrawDebugMonsterSpawn(
 	TEXT("ShowDebugMonsterSpawn"),
 	0,
@@ -185,10 +184,20 @@ void ACBGameMode::OnBoatDestroyed(AActor* DestroyedBoat)
 	if (DestroyedBoat)
 	{
 		Boats.Remove(DestroyedBoat);
-		return;
+	}
+	else
+	{
+		Boats.RemoveAll([=](const AActor* Actor) { return IsValid(Actor); });
 	}
 	
-	Boats.RemoveAll([=](const AActor* Actor) { return Actor == nullptr; });
+	++DestroyedBoats;
+	
+	if (bNextWaveWaitingForBoats && SpawnedBoats <= DestroyedBoats)
+	{
+		UE_LOG(CBLog, Log, TEXT("Spawned Boats: %d, Destoyed Boats: %d"), SpawnedBoats, DestroyedBoats);
+		bNextWaveWaitingForBoats = false;
+		WaveTimer_Elapsed();
+	}
 }
 
 void ACBGameMode::ProcessMonsterSpawning()
@@ -272,6 +281,7 @@ void ACBGameMode::SpawnBoat(AActor* PathActor)
 		ICBPathingActor::Execute_SetPath(Boat, Path);
 		ICBPath::Execute_RegisterBoatOnPath(PathActor, Boat);
 		OnBoatSpawned.Broadcast(Boat);
+		++SpawnedBoats;
 	}
 }
 
@@ -334,7 +344,9 @@ void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
 {
 	++WaveNumber;
 	GetWorldTimerManager().SetTimer(WaveTimerHandle, this, &ThisClass::WaveTimer_Elapsed, WaveDuration, false);
-	
+
+	SpawnedBoats = 0;
+	DestroyedBoats = 0;
 	FActivityStateUpdatedData Data;
 	Data.OldActivity = PreviousActivity;
 	Data.NewActivity = EGameActivity::Wave;
@@ -348,16 +360,24 @@ void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
 
 void ACBGameMode::WaveTimer_Elapsed()
 {
+	GetWorldTimerManager().ClearTimer(BoatSpawnTimerHandle);
+	GetWorldTimerManager().ClearTimer(BossSpawnTimerHandle);
+	WaveTimerHandle.Invalidate();
+
 	if (Boss)
 	{
 		bNextWaveWaitingForBoss = true;
 		return;
 	}
-	GetWorldTimerManager().ClearTimer(BoatSpawnTimerHandle);
-	GetWorldTimerManager().ClearTimer(MonsterSpawnTimerHandle);
-	GetWorldTimerManager().ClearTimer(BossSpawnTimerHandle);
-	WaveTimerHandle.Invalidate();
 
+	if (SpawnedBoats > DestroyedBoats)
+	{
+		UE_LOG(CBLog, Log, TEXT("Spawned Boats: %d, Destoyed Boats: %d"), SpawnedBoats, DestroyedBoats);
+		bNextWaveWaitingForBoats = true;
+		return;
+	}
+	
+	GetWorldTimerManager().ClearTimer(MonsterSpawnTimerHandle);
 	FActivityStateUpdatedData Data;
 	Data.OldActivity = EGameActivity::Wave;
 	Data.NewActivity = EGameActivity::Recess;
@@ -405,7 +425,7 @@ void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
 	if (bNextWaveWaitingForBoss)
 	{
 		bNextWaveWaitingForBoss = false;
-		StartNewWave();
+		WaveTimer_Elapsed();
 		return;
 	}
 	

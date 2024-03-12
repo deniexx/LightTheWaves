@@ -29,16 +29,16 @@ void UCBDisplayTutorialAction::Activate()
 	}
 
 	const FVector Location = DisplayParams.AttachedActor->GetActorLocation() + DisplayParams.Offset;
-	const FRotator Rotation = FRotator::ZeroRotator;
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	
-	SpawnedActor = World->SpawnActor<AActor>(DisplayParams.TutorialActor, Location, Rotation, SpawnParameters);
+	SpawnedActor = World->SpawnActor<AActor>(DisplayParams.TutorialActor, Location, DisplayParams.Rotation, SpawnParameters);
 
 	if (UTextRenderComponent* TextRenderComponent = SpawnedActor->GetComponentByClass<UTextRenderComponent>())
 	{
 		TextRenderComponent->SetText(FText::FromString(DisplayParams.TextToDisplay));
 		TextRenderComponent->SetTextRenderColor(DisplayParams.TextColor);
+		TextRenderComponent->SetWorldSize(DisplayParams.FontSize);
 		SpawnedActor->SetLifeSpan(DisplayParams.Duration);
 		UGameplayStatics::PlaySoundAtLocation(WorldContextObject, DisplayParams.SoundToPlay, Location);
 		return;

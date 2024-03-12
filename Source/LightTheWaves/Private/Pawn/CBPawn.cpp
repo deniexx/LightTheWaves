@@ -256,6 +256,7 @@ void ACBPawn::Reload_Implementation(bool bMortar)
 				MortarAmmo += StoredMortarAmmo;
 				StoredMortarAmmo = 0;
 			}
+			OnStoredAmmoUpdated.Broadcast(StoredMortarAmmo);
 		}
 		OnAmmoUpdated.Broadcast(MortarAmmo, MortarAmmoCapacity);
 	}
@@ -272,6 +273,7 @@ void ACBPawn::Reload_Implementation(bool bMortar)
 void ACBPawn::AddStoredAmmo_Implementation(int32 IncreaseAmount)
 {
 	StoredMortarAmmo += IncreaseAmount;
+	OnStoredAmmoUpdated.Broadcast(StoredMortarAmmo);
 }
 
 FOnAmmoExpended& ACBPawn::OnAmmoExpendedEvent()

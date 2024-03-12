@@ -284,6 +284,10 @@ private:
 	AActor* Boss;
 
 	bool bNextWaveWaitingForBoss = false;
+	bool bNextWaveWaitingForBoats = false;
+
+	int32 SpawnedBoats = 0;
+	int32 DestroyedBoats = 0;
 	
 	AActor* GetRandomSpline(USplineComponent*& OutSplineComponent);
 	AActor* GetSplineClosestToLocation(const FVector& Location, USplineComponent*& OutSplineComponent);
