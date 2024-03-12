@@ -18,6 +18,7 @@ class UXRDeviceVisualizationComponent;
 class UMotionControllerComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoUpdated, int32, NewAmmoCount, int32, MaxAmmo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStoredAmmoUpdated, int32, NewStoredAmmo);
 
 UCLASS()
 class LIGHTTHEWAVES_API ACBPawn : public APawn, public ICBGunInterface
@@ -184,6 +185,9 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnAmmoExpended OnAmmoExpended;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnStoredAmmoUpdated OnStoredAmmoUpdated;
 	
 public:	
 	// Called every frame
