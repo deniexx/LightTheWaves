@@ -22,11 +22,17 @@ struct FTutorialDisplayParams
 	FString TextToDisplay;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TutorialDisplayParams")
+	FRotator Rotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TutorialDisplayParams")
 	FVector Offset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TutorialDisplayParams", meta = (sRGB=true))
 	FColor TextColor;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TutorialDisplayParams")
+	int32 FontSize = 26;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TutorialDisplayParams")
 	USoundBase* SoundToPlay;
 
