@@ -37,13 +37,13 @@ struct FActivityStateUpdatedData
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly)
-	EActivityFinishedState ActivityFinishedState;
+	EActivityFinishedState ActivityFinishedState = EActivityFinishedState::Successful;
 
 	UPROPERTY(BlueprintReadOnly)
-	EGameActivity OldActivity;
+	EGameActivity OldActivity = EGameActivity::Unknown;
 
 	UPROPERTY(BlueprintReadOnly)
-	EGameActivity NewActivity;
+	EGameActivity NewActivity = EGameActivity::Unknown;
 	
 	/** @NOTE: Add any additional data that needs to be sent here */
 };

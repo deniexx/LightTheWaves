@@ -22,13 +22,13 @@ struct FTutorialDisplayParams
 	FString TextToDisplay;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TutorialDisplayParams")
-	FRotator Rotation;
+	FRotator Rotation = FRotator::ZeroRotator;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TutorialDisplayParams")
-	FVector Offset;
+	FVector Offset = FVector::ZeroVector;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TutorialDisplayParams", meta = (sRGB=true))
-	FColor TextColor;
+	FColor TextColor = FColor::White;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TutorialDisplayParams")
 	int32 FontSize = 26;

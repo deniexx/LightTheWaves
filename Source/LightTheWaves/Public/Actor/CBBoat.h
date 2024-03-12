@@ -163,7 +163,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TSubclassOf<AActor> DebrisLeftAfterDestruction;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties", meta = (Bitmask, BitmaskEnum="EDestroyingObject"))
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties", meta = (Bitmask, BitmaskEnum="/Script/LightTheWaves.EDestroyingObject"))
 	uint8 DebrisLeavingObjects;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")

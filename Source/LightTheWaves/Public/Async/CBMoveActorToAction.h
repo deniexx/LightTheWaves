@@ -16,11 +16,11 @@ struct FMoveActorToActionData
 	friend class UCBMoveActorToAction;
 
 	UPROPERTY(BlueprintReadWrite, Category = "MoveActorToActionData")
-	FVector StartLocation;
+	FVector StartLocation = FVector::ZeroVector;
 
 	/** The end location of the Actor */
 	UPROPERTY(BlueprintReadWrite, Category = "MoveActorToActionData")
-	FVector EndLocation;
+	FVector EndLocation = FVector::ZeroVector;
 
 	/** Should the actor location be used as a start location */
 	UPROPERTY(BlueprintReadWrite, Category = "MoveActorToActionData")

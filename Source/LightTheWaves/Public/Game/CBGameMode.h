@@ -99,7 +99,7 @@ struct FMonsterSpawningSettings
 	bool bUseCurveForMonsterSpawnPeriod = false;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
-	float MonsterSpawnPeriod;
+	float MonsterSpawnPeriod = 1.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Monsters")
 	FMonsterSpawnerParams SpawnParams;

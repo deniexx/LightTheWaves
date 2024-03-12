@@ -210,6 +210,7 @@ void ACBBoat::GeneratePathUsingNavSystem(bool bDrawDebug)
 void ACBBoat::OnPathQueryFinished(uint32 QueryID, ENavigationQueryResult::Type QueryResult,
 	TSharedPtr<FNavigationPath> NavigationPath)
 {
+	CurrentQueryIndex = INDEX_NONE;
 	if (QueryResult == ENavigationQueryResult::Success)
 	{
 		ReturnToPathPoints.Empty();
@@ -220,10 +221,30 @@ void ACBBoat::OnPathQueryFinished(uint32 QueryID, ENavigationQueryResult::Type Q
 		}
 
 		VisualisePath();
+		return;
 	}
 
-	UE_LOG(CBLog, Warning, TEXT("Boat failed to generate path! This might be very bad, someone should take a look!"));
-	CurrentQueryIndex = INDEX_NONE;
+	FString Result;
+	switch (QueryResult)
+	{
+	case ENavigationQueryResult::Invalid:
+		Result = "Invalid";
+		break;
+	case ENavigationQueryResult::Error:
+		Result = "Error";
+		break;
+	case ENavigationQueryResult::Fail:
+		Result = "Fail";
+		break;
+	case ENavigationQueryResult::Success:
+		Result = "Success";
+		break;
+	default:
+		Result = "Unknown";
+		break;
+	}
+	
+	UE_LOG(CBLog, Warning, TEXT("Boat failed to generate path! This might be very bad, someone should take a look! Fail Reason: %s"), *Result);
 }
 
 FVector ACBBoat::FindDesiredLocation(const bool bDrawDebug)
@@ -408,8 +429,6 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 		UCBDitherActor* DitherActor = UCBDitherActor::Execute(this, Params);
 		DitherActor->OnDitherFinished.AddDynamic(this, &ThisClass::DestroyAfterDither);
 	}
-	
-
 }
 
 #if WITH_EDITOR
@@ -448,6 +467,11 @@ EBoatPathingState ACBBoat::EvaluateStatePostFollowLight()
 		BoatPathingVis->SetVisibility(false);
 		CurrentPath = SplineComponent;
 		ICBPathProvider::Execute_RegisterPathingActorWithPath(GetWorld()->GetAuthGameMode(), this, SplineComponent);
+		UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+		if (NavSys && CurrentQueryIndex != INDEX_NONE)
+		{
+			NavSys->AbortAsyncFindPathRequest(CurrentQueryIndex);
+		}
 	}
 	
 	const FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);

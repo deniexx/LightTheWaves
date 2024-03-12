@@ -56,6 +56,7 @@ void UCBDitherActor::Tick(float DeltaTime)
 	if (Params.DitherAlpha < 0.f || Params.DitherAlpha > 1.f)
 	{
 		bDitherFinished = true;
+		OnDitherFinished.Broadcast();
 		SetReadyToDestroy();
 	}
 }

@@ -27,7 +27,7 @@ struct FDitherActorParams
 	UStaticMeshComponent* TargetMesh;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DitherActor")
-	EDitherMode DitherMode;
+	EDitherMode DitherMode = EDitherMode::DitherOut;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DitherActor")
 	float Duration = 1.f;

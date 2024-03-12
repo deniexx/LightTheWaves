@@ -342,6 +342,14 @@ bool ACBGameMode::IsAtMaxBoats()
 
 void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
 {
+	if (WaveNumber == 5)
+	{
+		// @TODO: Maybe remove after play party
+		FGameLostData GameLostData;
+		GameLostData.LoseReason = "Being too good!";
+		Cast<ICBPlayerInterface>(UGameplayStatics::GetPlayerState(this, 0))->OnGameLostEvent().Broadcast(GameLostData);
+	}
+	
 	++WaveNumber;
 	GetWorldTimerManager().SetTimer(WaveTimerHandle, this, &ThisClass::WaveTimer_Elapsed, WaveDuration, false);
 

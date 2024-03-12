@@ -18,15 +18,7 @@ struct FMonsterSpawnerParams
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MonsterSpawner")
 	float MinDistanceFromStartAndFinish = 1500.f;
-
-	// @TODO: Investigate if this is needed, can be left as 0 for now
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MonsterSpawner")
-	float StartX = 0.f;
-
-	// @TODO: Remove, not needed
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MonsterSpawner")
-	float EndX = 0.f;
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MonsterSpawner")
 	float MaxRadiusForLocationOffset = 50.f;
 
