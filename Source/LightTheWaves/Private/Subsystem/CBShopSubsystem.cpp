@@ -8,6 +8,7 @@
 #include "Interface/CBPlayerInterface.h"
 #include "LightTheWaves/LightTheWaves.h"
 #include "Object/CBPurchasableAction.h"
+#include "CBBlueprintFunctionLibrary.h"
 
 FPurchaseReturnInfo UCBShopSubsystem::TryPurchase(UCBPurchasableDefinition* PurchasableDefinition)
 {
@@ -41,6 +42,8 @@ FPurchaseReturnInfo UCBShopSubsystem::TryPurchase(UCBPurchasableDefinition* Purc
 	FPurchaseReturnInfo PurchaseReturnInfo;
 	PurchaseReturnInfo.bWasSuccessful = true;
 	PurchaseReturnInfo.FailReason = EPurchaseFailReason::None;
+
+	UCBBlueprintFunctionLibrary::AnalyticsAddNumberOfItemsPurchased(PlayerState, PurchasableDefinition->UpgradeName.ToString());
 
 	if (!BoughtUpgrades.Contains(PurchasableDefinition->IdentityTag))
 	{
