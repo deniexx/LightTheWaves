@@ -90,7 +90,7 @@ void ACBGameMode::GameFinished(const FGameLostData& Data)
 	GetWorldTimerManager().ClearTimer(BoatSpawnTimerHandle);
 	GetWorldTimerManager().ClearTimer(MonsterSpawnTimerHandle);
 	GetWorldTimerManager().ClearTimer(BossSpawnTimerHandle);
-	
+
 	for (TActorIterator<ACBBoat> It(GetWorld()); It; ++It)
 	{
 		ACBBoat* Boat = *It;
@@ -115,25 +115,27 @@ void ACBGameMode::GameFinished(const FGameLostData& Data)
 		// @TODO: When boss reiteration happens, make sure that the boss has a going back down animation, which can be played here
 		Boss->Destroy();
 	}
-	
-	float TotalTime = UGameplayStatics::GetTimeSeconds(this);
-	UGameAnalytics::AddDesignEventWithValue("Time.Total", TotalTime);
-	UGameAnalytics::AddDesignEventWithValue("Time.SpentInGameplay", TotalTime - GameStartTime);
-	UGameAnalytics::AddDesignEventWithValue("Player.Points", ICBPlayerInterface::Execute_GetPoints(UGameplayStatics::GetPlayerState(this, 0)));
-	UGameAnalytics::AddDesignEventWithValue("Player.Currency.Total", ICBPlayerInterface::Execute_GetTotalCurrency(UGameplayStatics::GetPlayerState(this, 0)));
-	UGameAnalytics::AddDesignEventWithValue("Player.Currency.Final", ICBPlayerInterface::Execute_GetCurrency(UGameplayStatics::GetPlayerState(this, 0)));
-	UGameAnalytics::AddDesignEventWithValue("Rounds.Survived", WaveNumber);
-	UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Debris", BoatsKilledByDebris);
-	UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Rocks", BoatsKilledByRocks);
-	UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Tentacles", BoatsKilledByTentacle);
-	UGameAnalytics::AddDesignEventWithValue("Boats.RechedPort", BoatsToPort);
-	UGameAnalytics::AddDesignEventWithValue("Boss.AverageOnScreenTime", BossOnScreenTotalTime / BossSpawns);
-	
-	for (const auto& Purchase : ItemPurchases)
-	{
-		UGameAnalytics::AddDesignEventWithValue(Purchase.Key, Purchase.Value);
-	}
 
+	if (bAnalyticsOn)
+	{
+		float TotalTime = UGameplayStatics::GetTimeSeconds(this);
+		UGameAnalytics::AddDesignEventWithValue("Time.Total", TotalTime);
+		UGameAnalytics::AddDesignEventWithValue("Time.SpentInGameplay", TotalTime - GameStartTime);
+		UGameAnalytics::AddDesignEventWithValue("Player.Points", ICBPlayerInterface::Execute_GetPoints(UGameplayStatics::GetPlayerState(this, 0)));
+		UGameAnalytics::AddDesignEventWithValue("Player.Currency.Total", ICBPlayerInterface::Execute_GetTotalCurrency(UGameplayStatics::GetPlayerState(this, 0)));
+		UGameAnalytics::AddDesignEventWithValue("Player.Currency.Final", ICBPlayerInterface::Execute_GetCurrency(UGameplayStatics::GetPlayerState(this, 0)));
+		UGameAnalytics::AddDesignEventWithValue("Rounds.Survived", WaveNumber);
+		UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Debris", BoatsKilledByDebris);
+		UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Rocks", BoatsKilledByRocks);
+		UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Tentacles", BoatsKilledByTentacle);
+		UGameAnalytics::AddDesignEventWithValue("Boats.RechedPort", BoatsToPort);
+		UGameAnalytics::AddDesignEventWithValue("Boss.AverageOnScreenTime", BossOnScreenTotalTime / BossSpawns);
+
+		for (const auto& Purchase : ItemPurchases)
+		{
+			UGameAnalytics::AddDesignEventWithValue(Purchase.Key, Purchase.Value);
+		}
+	}
 	OnGameFinished(Data);	
 }
 
