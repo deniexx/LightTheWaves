@@ -54,6 +54,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Reputation")
 	float GetPlayerReputation() const;
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Reputation")
+	float GetTotalCurrency() const;
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Attributes")
 	void ApplyChangeToPlayerReputation(float Delta);
 

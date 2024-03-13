@@ -48,4 +48,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
 	static void SetTutorialEnabled(UObject* WorldContextObject, bool bEnabled);
+
+	static void AnalyticsAddBoatReachedPort(UObject* WorldContextObject);
+	static void AnalyticsAddBoatKilledByDebris(UObject* WorldContextObject);
+	static void AnalyticsAddBoatKilledByTentacle(UObject* WorldContextObject);
+	static void AnalyticsAddBoatKilledByRocks(UObject* WorldContextObject);
+	static void AnalyticsAddNumberOfItemsPurchased(UObject* WorldContextObject, FString ItemName);
 };

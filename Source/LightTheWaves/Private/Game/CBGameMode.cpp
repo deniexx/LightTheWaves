@@ -1,6 +1,5 @@
 // Made By Cubic Burrito
 
-
 #include "Game/CBGameMode.h"
 
 #include "CBBlueprintFunctionLibrary.h"
@@ -15,6 +14,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerState.h"
 #include "LightTheWaves/LightTheWaves.h"
+#include "GameAnalytics.h"
 
 #define BOAT_SPAWN_FORMULA(WaveNumber) WaveNumber
 
@@ -73,6 +73,11 @@ void ACBGameMode::BeginPlay()
 		Initialiser->RegisterObjectToInitialiser(this);
 		Initialiser->RegisterGameMode(this);
 	}
+
+#define GAME_KEY "3db6376b6e791eb92b9642730ef995fa36254a25"
+#define SECRET_KEY "3db6376b6e791eb92b9642730ef995fa36254a25"
+
+	UGameAnalytics::initialize(GAME_KEY, SECRET_KEY);
 }
 
 void ACBGameMode::OnGameFinished_Implementation(const FGameLostData& Data)
@@ -111,6 +116,24 @@ void ACBGameMode::GameFinished(const FGameLostData& Data)
 		Boss->Destroy();
 	}
 	
+	float TotalTime = UGameplayStatics::GetTimeSeconds(this);
+	UGameAnalytics::AddDesignEventWithValue("Time.Total", TotalTime);
+	UGameAnalytics::AddDesignEventWithValue("Time.SpentInGameplay", TotalTime - GameStartTime);
+	UGameAnalytics::AddDesignEventWithValue("Player.Points", ICBPlayerInterface::Execute_GetPoints(UGameplayStatics::GetPlayerState(this, 0)));
+	UGameAnalytics::AddDesignEventWithValue("Player.Currency.Total", ICBPlayerInterface::Execute_GetTotalCurrency(UGameplayStatics::GetPlayerState(this, 0)));
+	UGameAnalytics::AddDesignEventWithValue("Player.Currency.Final", ICBPlayerInterface::Execute_GetCurrency(UGameplayStatics::GetPlayerState(this, 0)));
+	UGameAnalytics::AddDesignEventWithValue("Rounds.Survived", WaveNumber);
+	UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Debris", BoatsKilledByDebris);
+	UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Rocks", BoatsKilledByRocks);
+	UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Tentacles", BoatsKilledByTentacle);
+	UGameAnalytics::AddDesignEventWithValue("Boats.RechedPort", BoatsToPort);
+	UGameAnalytics::AddDesignEventWithValue("Boss.AverageOnScreenTime", BossOnScreenTotalTime / BossSpawns);
+	
+	for (const auto& Purchase : ItemPurchases)
+	{
+		UGameAnalytics::AddDesignEventWithValue(Purchase.Key, Purchase.Value);
+	}
+
 	OnGameFinished(Data);	
 }
 
@@ -350,6 +373,12 @@ void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
 		Cast<ICBPlayerInterface>(UGameplayStatics::GetPlayerState(this, 0))->OnGameLostEvent().Broadcast(GameLostData);
 	}
 	
+
+	if (WaveNumber == 0)
+	{
+		GameStartTime = UGameplayStatics::GetTimeSeconds(this);
+	}
+
 	++WaveNumber;
 	GetWorldTimerManager().SetTimer(WaveTimerHandle, this, &ThisClass::WaveTimer_Elapsed, WaveDuration, false);
 
@@ -421,6 +450,8 @@ void ACBGameMode::SpawnBoss()
 	Data.ActivityFinishedState = EActivityFinishedState::Ongoing;
 	OnActivityStateUpdated.Broadcast(Data);
 
+	++BossSpawns;
+	BossSpawnedTime = UGameplayStatics::GetTimeSeconds(this);
 	OnBossSpawned.Broadcast(Boss);
 	Boss->OnDestroyed.AddDynamic(this, &ThisClass::OnBossKilled);
 }
@@ -437,6 +468,7 @@ void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
 		return;
 	}
 	
+	BossOnScreenTotalTime += (UGameplayStatics::GetTimeSeconds(this) - BossSpawnedTime);
 	FActivityStateUpdatedData Data;
 	Data.ActivityFinishedState = EActivityFinishedState::Successful;
 	Data.OldActivity = EGameActivity::Boss;

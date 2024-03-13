@@ -61,6 +61,11 @@ void ACBPlayerState::ApplyChangeToCurrency_Implementation(int32 Delta)
 	{
 		return;
 	}
+
+	if (Delta > 0)
+	{
+		TotalCurrency += Delta;
+	}
 	
 	const int32 OldCurrency = Currency;
 	Currency = FMath::Clamp(Currency + Delta, 0 , 999);
@@ -134,6 +139,11 @@ bool ACBPlayerState::HasEnoughCurrency_Implementation(int32 AmountToCheck)
 float ACBPlayerState::GetPlayerReputation_Implementation() const
 {
 	return Reputation;
+}
+
+float ACBPlayerState::GetTotalCurrency_Implementation() const
+{
+	return TotalCurrency;
 }
 
 FOnAttributeChanged& ACBPlayerState::OnCurrencyChangedEvent()

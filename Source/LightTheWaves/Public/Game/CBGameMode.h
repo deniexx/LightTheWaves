@@ -155,6 +155,19 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
 	bool bPlayTutorial;
+
+	UPROPERTY()
+	TMap<FString, int32> ItemPurchases;
+
+	int32 BoatsToPort = 0;
+	int32 BoatsKilledByTentacle = 0;
+	int32 BoatsKilledByDebris = 0;
+	int32 BoatsKilledByRocks = 0;
+	float GameStartTime = 0.f;
+
+	float BossSpawnedTime = 0.f;
+	float BossOnScreenTotalTime;
+	int32 BossSpawns;
 	
 protected:
 
@@ -227,6 +240,9 @@ protected:
 
 	UFUNCTION(BlueprintNativeEvent)
 	void OnGameFinished(const FGameLostData& Data);
+
+	UPROPERTY(EditDefaultsOnly)
+	bool bAnalyticsOn = true;
 
 private:
 

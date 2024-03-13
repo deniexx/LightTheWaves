@@ -24,6 +24,7 @@ public:
 	virtual int32 GetPoints_Implementation() const override;
 	virtual bool HasEnoughCurrency_Implementation(int32 AmountToCheck) override;
 	virtual float GetPlayerReputation_Implementation() const override;
+	virtual float GetTotalCurrency_Implementation() const override;
 	virtual void ApplyChangeToPlayerReputation_Implementation(float Delta) override;
 	virtual void IncreaseMaxReputation_Implementation(float IncreaseAmount) override;
 	virtual FOnAttributeChanged& OnCurrencyChangedEvent() override;
@@ -50,6 +51,9 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnGameLost OnGameLost;	
+
+	UPROPERTY()
+	int32 TotalCurrency = 0;
 
 	UPROPERTY()
 	int32 Currency = 0;
