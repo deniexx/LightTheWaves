@@ -256,8 +256,9 @@ void ACBPawn::Reload_Implementation(bool bMortar)
 				MortarAmmo += StoredMortarAmmo;
 				StoredMortarAmmo = 0;
 			}
-			OnStoredAmmoUpdated.Broadcast(bMortar ? StoredMortarAmmo : StoredMortarAmmo + MortarAmmo);
+			UGameplayStatics::PlaySoundAtLocation(this, ReloadSound, HandCannon->GetComponentLocation(), FRotator::ZeroRotator);
 		}
+		OnStoredAmmoUpdated.Broadcast(bMortar ? StoredMortarAmmo : StoredMortarAmmo + MortarAmmo);
 		OnAmmoUpdated.Broadcast(MortarAmmo, MortarAmmoCapacity);
 	}
 	else
@@ -265,6 +266,7 @@ void ACBPawn::Reload_Implementation(bool bMortar)
 		Ammo = AmmoCapacity;
 		OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
 		OnStoredAmmoUpdated.Broadcast(StoredMortarAmmo + MortarAmmo);
+		UGameplayStatics::PlaySoundAtLocation(this, ReloadSound, HandCannon->GetComponentLocation(), FRotator::ZeroRotator);
 	}
 
 	bMortarMode = bMortar;

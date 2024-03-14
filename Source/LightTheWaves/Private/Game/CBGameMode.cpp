@@ -76,8 +76,11 @@ void ACBGameMode::BeginPlay()
 
 #define GAME_KEY "3db6376b6e791eb92b9642730ef995fa36254a25"
 #define SECRET_KEY "3db6376b6e791eb92b9642730ef995fa36254a25"
-
-	UGameAnalytics::initialize(GAME_KEY, SECRET_KEY);
+	if(bAnalyticsOn)
+	{
+		UGameAnalytics::initialize(GAME_KEY, SECRET_KEY);
+		UGameAnalytics::startSession();
+	}
 }
 
 void ACBGameMode::OnGameFinished_Implementation(const FGameLostData& Data)
@@ -118,25 +121,27 @@ void ACBGameMode::GameFinished(const FGameLostData& Data)
 
 	if (bAnalyticsOn)
 	{
-		float TotalTime = UGameplayStatics::GetTimeSeconds(this);
-		UGameAnalytics::AddDesignEventWithValue("Time.Total", TotalTime);
-		UGameAnalytics::AddDesignEventWithValue("Time.SpentInGameplay", TotalTime - GameStartTime);
-		UGameAnalytics::AddDesignEventWithValue("Player.Points", ICBPlayerInterface::Execute_GetPoints(UGameplayStatics::GetPlayerState(this, 0)));
-		UGameAnalytics::AddDesignEventWithValue("Player.Currency.Total", ICBPlayerInterface::Execute_GetTotalCurrency(UGameplayStatics::GetPlayerState(this, 0)));
-		UGameAnalytics::AddDesignEventWithValue("Player.Currency.Final", ICBPlayerInterface::Execute_GetCurrency(UGameplayStatics::GetPlayerState(this, 0)));
-		UGameAnalytics::AddDesignEventWithValue("Rounds.Survived", WaveNumber);
-		UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Debris", BoatsKilledByDebris);
-		UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Rocks", BoatsKilledByRocks);
-		UGameAnalytics::AddDesignEventWithValue("Boats.KilledFrom.Tentacles", BoatsKilledByTentacle);
-		UGameAnalytics::AddDesignEventWithValue("Boats.RechedPort", BoatsToPort);
-		UGameAnalytics::AddDesignEventWithValue("Boss.AverageOnScreenTime", BossOnScreenTotalTime / BossSpawns);
+		UE_LOG(CBLog, Log, TEXT("Recording Analytics"));
+		const float TotalTime = UGameplayStatics::GetTimeSeconds(this);
+		UGameAnalytics::AddDesignEventWithValue("Time:Total", TotalTime);
+		UGameAnalytics::AddDesignEventWithValue("Time:SpentInGameplay", TotalTime - GameStartTime);
+		UGameAnalytics::AddDesignEventWithValue("Player:Points", ICBPlayerInterface::Execute_GetPoints(UGameplayStatics::GetPlayerState(this, 0)));
+		UGameAnalytics::AddDesignEventWithValue("Player:Currency;Total", ICBPlayerInterface::Execute_GetTotalCurrency(UGameplayStatics::GetPlayerState(this, 0)));
+		UGameAnalytics::AddDesignEventWithValue("Player:Currency;Final", ICBPlayerInterface::Execute_GetCurrency(UGameplayStatics::GetPlayerState(this, 0)));
+		UGameAnalytics::AddDesignEventWithValue("Rounds:Survived", WaveNumber);
+		UGameAnalytics::AddDesignEventWithValue("Boats:KilledFrom:Debris", BoatsKilledByDebris);
+		UGameAnalytics::AddDesignEventWithValue("Boats:KilledFrom:Rocks", BoatsKilledByRocks);
+		UGameAnalytics::AddDesignEventWithValue("Boats:KilledFrom:Tentacles", BoatsKilledByTentacle);
+		UGameAnalytics::AddDesignEventWithValue("Boats:ReachedPort", BoatsToPort);
+		UGameAnalytics::AddDesignEventWithValue("Boss:AverageOnScreenTime", BossOnScreenTotalTime / BossSpawns);
 
 		for (const auto& Purchase : ItemPurchases)
 		{
 			UGameAnalytics::AddDesignEventWithValue(Purchase.Key, Purchase.Value);
 		}
+		UGameAnalytics::endSession();
 	}
-	OnGameFinished(Data);	
+	OnGameFinished(Data);
 }
 
 void ACBGameMode::TestGameplay()

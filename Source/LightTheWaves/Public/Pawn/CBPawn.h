@@ -121,6 +121,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	TObjectPtr<USoundBase> MortarShootSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
+	TObjectPtr<USoundBase> ReloadSound;
 	
 	/** Projectile class to spawn from the cannon */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
