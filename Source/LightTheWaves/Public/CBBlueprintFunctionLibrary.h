@@ -6,6 +6,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CBBlueprintFunctionLibrary.generated.h"
 
+class UCBNotificationSubsystem;
 class FOnMonsterSpawned;
 class UCBShopSubsystem;
 class UCBInitialiser;
@@ -43,9 +44,30 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
 	static UCBShopSubsystem* GetShopSubsystem(UObject* WorldContextObject);
 
+	/**
+	 * Checks if the tutorial should be played
+	 * @param WorldContextObject The world context object, used to get the world
+	 * @return Whether the tutorial should be played or not
+	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
 	static bool ShouldPlayTutorial(UObject* WorldContextObject);
 
+	/**
+	 * Sets the tutorial to be enabled/disabled
+	 * @param WorldContextObject The world context object, used to get the world
+	 * @param bEnabled Whether the tutorial is enabled or disabled
+	 */
 	UFUNCTION(BlueprintCallable, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
 	static void SetTutorialEnabled(UObject* WorldContextObject, bool bEnabled);
+
+	/**
+ 	 * Gets the Notification Subsystem
+ 	 * @param WorldContextObject The world context object, used to get the world
+ 	 * @return The Notification Subsystem, can be nullptr
+ 	 */
+	UFUNCTION(BlueprintCallable, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
+	static UCBNotificationSubsystem* GetNotificationSubsystem(UObject* WorldContextObject);
+	
+	UFUNCTION(BlueprintCallable, Category = "CBFunctionLibrary", meta = (WorldContext = "WorldContextObject", HidePin = "WorldContextObject"))
+	static void SendNotification(UObject* WorldContextObject, const FString& Notification, float Duration);
 };

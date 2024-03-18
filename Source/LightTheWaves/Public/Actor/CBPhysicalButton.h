@@ -29,7 +29,7 @@ protected:
 	TObjectPtr<USceneComponent> SceneRootComponent;
 
 	/** The body of the button to be used */
-	UPROPERTY(VisibleAnywhere, Category = "Component")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
 	TObjectPtr<UStaticMeshComponent> ButtonBody;
 
 	/** The box collision that detects the activation of the button */

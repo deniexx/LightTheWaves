@@ -6,6 +6,7 @@
 #include "CBInitialiser.h"
 #include "Game/CBGameMode.h"
 #include "Kismet/GameplayStatics.h"
+#include "Subsystem/CBNotificationSubsystem.h"
 #include "Subsystem/CBShopSubsystem.h"
 
 UCBInitialiser* UCBBlueprintFunctionLibrary::GetInitialisationSubsystem(UObject* WorldContextObject)
@@ -52,5 +53,22 @@ void UCBBlueprintFunctionLibrary::SetTutorialEnabled(UObject* WorldContextObject
 	if (CBGameMode)
 	{
 		CBGameMode->bPlayTutorial = bEnabled;
+	}
+}
+
+UCBNotificationSubsystem* UCBBlueprintFunctionLibrary::GetNotificationSubsystem(UObject* WorldContextObject)
+{
+	if (const UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(WorldContextObject))
+	{
+		return GameInstance->GetSubsystem<UCBNotificationSubsystem>();
+	}
+	return nullptr;
+}
+
+void UCBBlueprintFunctionLibrary::SendNotification(UObject* WorldContextObject, const FString& Notification, float Duration)
+{
+	if (UCBNotificationSubsystem* Subsystem = GetNotificationSubsystem(WorldContextObject))
+	{
+		Subsystem->SendNotification(Notification, Duration);
 	}
 }

@@ -109,7 +109,7 @@ void ACBBoat::FollowLight(float DeltaTime)
 	
 	MovementDirection = (FollowTarget->GetComponentLocation() - GetActorLocation()).GetSafeNormal();
 	MovementDirection.Z = 0;
-	AddActorWorldOffset(MovementDirection * LightFollowSpeed * DeltaTime);
+	AddActorWorldOffset(MovementDirection * (MovementSpeed * LightFollowSpeedMultiplier)  * DeltaTime);
 }
 
 void ACBBoat::FollowPath(float DeltaTime)
@@ -126,7 +126,7 @@ void ACBBoat::FollowPath(float DeltaTime)
 	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
 
 	const float DistanceFromEnd = (GetActorLocation() - CurrentPath->GetWorldLocationAtSplinePoint(CurrentPath->GetNumberOfSplinePoints() - 1)).Length();
-	if (FMath::Abs(DistanceFromEnd) < 10.f) // @TODO: Test this to see if it actually touches the end
+	if (FMath::Abs(DistanceFromEnd) < 100.f)
 	{
 		Die(EDestroyingObject::Port);
 	}
@@ -415,6 +415,7 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 
 	SetActorEnableCollision(false);
 	OnPathingActorLeftPath.Broadcast(this);
+	OnBoatDead.Broadcast(DestroyingObject);
 	
 	if (DestroyingObject != EDestroyingObject::Port)
 	{
@@ -428,7 +429,6 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 		{
 			Action->OnActorFinishedMoving.AddDynamic(this, &ThisClass::DestroyOnFinishedMoving);
 		}
-		OnBoatDead.Broadcast(DestroyingObject);
 	}
 	else
 	{
