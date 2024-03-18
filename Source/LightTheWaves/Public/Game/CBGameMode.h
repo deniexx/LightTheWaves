@@ -9,6 +9,7 @@
 #include "Interface/CBWaveDirector.h"
 #include "FMonsterSpawnerSettings.h"
 #include "Interface/CBInitialiserInterface.h"
+#include "Interface/CBPlayerInterface.h"
 #include "CBGameMode.generated.h"
 
 USTRUCT(BlueprintType)
@@ -240,9 +241,6 @@ protected:
 
 	UFUNCTION(BlueprintNativeEvent)
 	void OnGameFinished(const FGameLostData& Data);
-
-	UPROPERTY(EditDefaultsOnly)
-	bool bAnalyticsOn = true;
 
 private:
 

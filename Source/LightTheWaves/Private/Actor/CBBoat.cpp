@@ -407,7 +407,6 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 	
 	if (DestroyingObject != EDestroyingObject::Port)
 	{
-		UCBBlueprintFunctionLibrary::AnalyticsAddBoatReachedPort(this);
 		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(UGameplayStatics::GetPlayerState(this, 0), -ReputationLoss);
 		FMoveActorToActionData Data;
 		Data.bUseActorLocationAsStart = true;
@@ -421,19 +420,6 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 	}
 	else
 	{
-		switch (DestroyingObject)
-		{
-		case EDestroyingObject::Debris:
-			UCBBlueprintFunctionLibrary::AnalyticsAddBoatKilledByDebris(this);
-			break;
-		case EDestroyingObject::Monster:
-			UCBBlueprintFunctionLibrary::AnalyticsAddBoatKilledByTentacle(this);
-			break;
-		case EDestroyingObject::Hazard:
-			UCBBlueprintFunctionLibrary::AnalyticsAddBoatKilledByRocks(this);
-			break;
-		}
-
 		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(UGameplayStatics::GetPlayerState(this, 0), ReputationRegain);
 		FDitherActorParams Params;
 		Params.Duration = 2.f;

@@ -42,9 +42,7 @@ FPurchaseReturnInfo UCBShopSubsystem::TryPurchase(UCBPurchasableDefinition* Purc
 	FPurchaseReturnInfo PurchaseReturnInfo;
 	PurchaseReturnInfo.bWasSuccessful = true;
 	PurchaseReturnInfo.FailReason = EPurchaseFailReason::None;
-
-	UCBBlueprintFunctionLibrary::AnalyticsAddNumberOfItemsPurchased(PlayerState, PurchasableDefinition->UpgradeName.ToString());
-
+	
 	if (!BoughtUpgrades.Contains(PurchasableDefinition->IdentityTag))
 	{
 		BoughtUpgrades.Add(PurchasableDefinition->IdentityTag);
