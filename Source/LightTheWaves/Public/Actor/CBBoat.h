@@ -9,7 +9,6 @@
 #include "Interface/CBDestroyableObject.h"
 #include "CBBoat.generated.h"
 
-class UCBObjectDamageDefinition;
 class USphereComponent;
 
 UENUM(BlueprintType)
@@ -20,6 +19,9 @@ enum class EBoatPathingState : uint8
 
 	None UMETA( Hidden )
 };
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBoatDead, EDestroyingObject, DestroyingObject);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBoatHitByDebris);
 
 UCLASS()
 class LIGHTTHEWAVES_API ACBBoat : public APawn, public ICBLightInteractor, public ICBPathingActor, public ICBDestroyableObject
@@ -52,6 +54,12 @@ public:
 	virtual float GetMaxHealth_Implementation() const override;
 	virtual float GetCurrentHealth_Implementation() const override;
 	/**End Destroyable Object interface */
+	
+	UPROPERTY(BlueprintAssignable, Category = "Boat Properties")
+	FOnBoatDead OnBoatDead;
+
+	UPROPERTY(BlueprintAssignable, Category = "Boat Properties")
+	FOnBoatHitByDebris OnBoatHitByDebris;
 
 #if WITH_EDITORONLY_DATA	
 	/** When TRUE, updating the RatioCurrencyToPoints variable will update the currency based on the points

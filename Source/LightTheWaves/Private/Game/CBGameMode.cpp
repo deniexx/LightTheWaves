@@ -79,6 +79,11 @@ void ACBGameMode::OnGameFinished_Implementation(const FGameLostData& Data)
 	// Implemented in blueprints
 }
 
+void ACBGameMode::PlayTutorial_Implementation()
+{
+	// Implemented in blueprints
+}
+
 void ACBGameMode::GameFinished(const FGameLostData& Data)
 {
 	GetWorldTimerManager().ClearTimer(BoatSpawnTimerHandle);
@@ -115,7 +120,7 @@ void ACBGameMode::GameFinished(const FGameLostData& Data)
 
 void ACBGameMode::TestGameplay()
 {
-	StartNewWave();
+	Execute_StartWaveGameplay(this);
 }
 
 USplineComponent* ACBGameMode::GetRandomPath_Implementation()
@@ -154,6 +159,13 @@ void ACBGameMode::StartWaveGameplay_Implementation()
 {
 	if (WaveTimerHandle.IsValid())
 	{
+		return;
+	}
+
+	if (bPlayTutorial)
+	{
+		PlayTutorial();
+		bPlayTutorial = false;
 		return;
 	}
 
@@ -267,12 +279,17 @@ float ACBGameMode::GetBoatSpawnPeriod()
 	return BoatSpawnPeriod;
 }
 
-void ACBGameMode::SpawnBoat(AActor* PathActor)
+AActor* ACBGameMode::SpawnBoat(AActor* PathActor, TSubclassOf<AActor> BoatToSpawn)
 {
 	FActorSpawnParameters SpawnParameters;
+	if (!PathActor)
+	{
+		USplineComponent* SplineComponent;
+		PathActor = GetRandomSpline(SplineComponent);
+	}
 	USplineComponent* Path = ICBPath::Execute_GetPath(PathActor);
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	AActor* Boat = GetWorld()->SpawnActor<AActor>(GetRandomSpawnableBoat(), Path->GetWorldLocationAtSplinePoint(0), FRotator::ZeroRotator,  SpawnParameters);
+	AActor* Boat = GetWorld()->SpawnActor<AActor>(BoatToSpawn, Path->GetWorldLocationAtSplinePoint(0), FRotator::ZeroRotator,  SpawnParameters);
 	if (Boat)
 	{
 		Boats.Add(Boat);
@@ -282,6 +299,8 @@ void ACBGameMode::SpawnBoat(AActor* PathActor)
 		OnBoatSpawned.Broadcast(Boat);
 		++SpawnedBoats;
 	}
+
+	return Boat;
 }
 
 bool ACBGameMode::TrySpawnBoat()
@@ -311,13 +330,13 @@ bool ACBGameMode::TrySpawnBoat()
 	if (MaxBoatsPerPath <= 0)
 	{
 		USplineComponent* Spline;
-		SpawnBoat(GetRandomSpline(Spline));
+		SpawnBoat(GetRandomSpline(Spline), GetRandomSpawnableBoat());
 		return true;
 	}
 	
 	if (IsAnyPathFree(MaxBoatsPerPath, FreePathActor))
 	{
-		SpawnBoat(FreePathActor);
+		SpawnBoat(FreePathActor, GetRandomSpawnableBoat());
 		return true;
 	}
 	
@@ -347,12 +366,6 @@ void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
 		FGameLostData GameLostData;
 		GameLostData.LoseReason = "Being too good!";
 		Cast<ICBPlayerInterface>(UGameplayStatics::GetPlayerState(this, 0))->OnGameLostEvent().Broadcast(GameLostData);
-	}
-	
-
-	if (WaveNumber == 0)
-	{
-		GameStartTime = UGameplayStatics::GetTimeSeconds(this);
 	}
 
 	++WaveNumber;
@@ -425,9 +438,7 @@ void ACBGameMode::SpawnBoss()
 	Data.NewActivity = EGameActivity::Boss;
 	Data.ActivityFinishedState = EActivityFinishedState::Ongoing;
 	OnActivityStateUpdated.Broadcast(Data);
-
-	++BossSpawns;
-	BossSpawnedTime = UGameplayStatics::GetTimeSeconds(this);
+	
 	OnBossSpawned.Broadcast(Boss);
 	Boss->OnDestroyed.AddDynamic(this, &ThisClass::OnBossKilled);
 }
@@ -444,7 +455,6 @@ void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
 		return;
 	}
 	
-	BossOnScreenTotalTime += (UGameplayStatics::GetTimeSeconds(this) - BossSpawnedTime);
 	FActivityStateUpdatedData Data;
 	Data.ActivityFinishedState = EActivityFinishedState::Successful;
 	Data.OldActivity = EGameActivity::Boss;

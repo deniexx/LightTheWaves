@@ -157,19 +157,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
 	bool bPlayTutorial;
 
-	UPROPERTY()
-	TMap<FString, int32> ItemPurchases;
-
-	int32 BoatsToPort = 0;
-	int32 BoatsKilledByTentacle = 0;
-	int32 BoatsKilledByDebris = 0;
-	int32 BoatsKilledByRocks = 0;
-	float GameStartTime = 0.f;
-
-	float BossSpawnedTime = 0.f;
-	float BossOnScreenTotalTime;
-	int32 BossSpawns;
-	
 protected:
 
 	virtual void BeginPlay() override;
@@ -242,13 +229,15 @@ protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void OnGameFinished(const FGameLostData& Data);
 
+	UFUNCTION(BlueprintNativeEvent)
+	void PlayTutorial();
+
 private:
 
 	UFUNCTION()
 	void GameFinished(const FGameLostData& Data);
 	
 	float GetBoatSpawnPeriod();
-	void SpawnBoat(AActor* PathActor);
 	void ProcessBoatSpawning();
 	void ProcessMonsterSpawning();
 	void SpawnBoss();
@@ -273,8 +262,11 @@ private:
 	UFUNCTION()
 	void OnBoatDestroyed(AActor* DestroyedBoat);
 	
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void SpawnMonster();
+
+	UFUNCTION(BlueprintCallable)
+	AActor* SpawnBoat(AActor* PathActor, TSubclassOf<AActor> BoatToSpawn);
 
 	UFUNCTION()
 	void RecessTimer_Elapsed();

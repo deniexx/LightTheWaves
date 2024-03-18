@@ -119,11 +119,17 @@ void ACBBoat::FollowPath(float DeltaTime)
 		UE_LOG(CBLog, Warning, TEXT("Boat [%s] has no current path, it is either waiting to receive one, or something is wrong."), *GetNameSafe(this));
 		return;
 	}
-
+	
 	const FVector LocationOnSpline = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
 	MovementDirection = CurrentPath->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
 	MovementDirection.Z = 0;
 	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
+
+	const float DistanceFromEnd = (GetActorLocation() - CurrentPath->GetWorldLocationAtSplinePoint(CurrentPath->GetNumberOfSplinePoints() - 1)).Length();
+	if (FMath::Abs(DistanceFromEnd) < 10.f) // @TODO: Test this to see if it actually touches the end
+	{
+		Die(EDestroyingObject::Port);
+	}
 }
 
 void ACBBoat::VisualisePath()
@@ -366,6 +372,11 @@ void ACBBoat::OnLightFocusEnd_Implementation()
 void ACBBoat::TakeDamage_Implementation(AActor* InstigatorActor, EDestroyingObject DestroyingObject, float IncomingDamage)
 {
 	Health = FMath::Clamp(Health - IncomingDamage, 0.f, MaxHealth);
+
+	if (DestroyingObject == EDestroyingObject::Debris)
+	{
+		OnBoatHitByDebris.Broadcast();
+	}
 	
 	if (Health <= 0.f)
 	{
@@ -417,6 +428,7 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 		{
 			Action->OnActorFinishedMoving.AddDynamic(this, &ThisClass::DestroyOnFinishedMoving);
 		}
+		OnBoatDead.Broadcast(DestroyingObject);
 	}
 	else
 	{
