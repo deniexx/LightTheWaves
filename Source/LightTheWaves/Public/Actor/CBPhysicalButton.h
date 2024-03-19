@@ -40,7 +40,7 @@ protected:
 	TObjectPtr<UPhysicsConstraintComponent> PhysicsConstraintComponent;
 
 	/** The actual button mesh that will be pushed */
-	UPROPERTY(VisibleAnywhere, Category = "Component")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
 	TObjectPtr<UStaticMeshComponent> ButtonTop;
 
 	/** This will push the button back to it's original position */

@@ -60,6 +60,8 @@ FPurchaseReturnInfo UCBShopSubsystem::TryPurchase(UCBPurchasableDefinition* Purc
 	{
 		PurchasableAction->OnPurchased(PlayerState);
 	}
+
+	OnShopItemBought.Broadcast(PurchasableDefinition, BoughtUpgrades[PurchasableDefinition->IdentityTag]);
 	
 	return PurchaseReturnInfo;
 }

@@ -132,7 +132,10 @@ protected:
 	/** Projectile class to spawn from the cannon */
 	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
 	TSubclassOf<ACBProjectile> ProjectileClassMortar;
-	
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
+	int32 StartingAmmo;
+
 	/** Currently called from the input action, might have to rework later in order for it work with the cannon physical interaction */
 	UFUNCTION(BlueprintCallable)
 	virtual void Shoot() override;
@@ -191,6 +194,7 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnStoredAmmoUpdated OnStoredAmmoUpdated;
+
 	
 public:	
 	// Called every frame
@@ -198,5 +202,8 @@ public:
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bInfiniteAmmo = true;
 
 };

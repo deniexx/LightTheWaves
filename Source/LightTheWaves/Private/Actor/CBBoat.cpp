@@ -77,6 +77,11 @@ void ACBBoat::BeginPlay()
 void ACBBoat::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (bDead)
+	{
+		return;
+	}
 	
 	if (IsFollowingLight())
 	{
@@ -408,6 +413,12 @@ void ACBBoat::DestroyAfterDither()
 
 void ACBBoat::Die(EDestroyingObject DestroyingObject)
 {
+	if (bDead)
+	{
+		return;
+	}
+	
+	bDead = true;
 	if (TEST_BIT(DebrisLeavingObjects, DestroyingObject))
 	{
 		LeaveDebris(GetActorLocation());

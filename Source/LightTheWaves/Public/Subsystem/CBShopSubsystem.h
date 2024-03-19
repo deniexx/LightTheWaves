@@ -31,6 +31,8 @@ struct FPurchaseReturnInfo
 	EPurchaseFailReason FailReason = EPurchaseFailReason::None;
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnShopItemBought, UCBPurchasableDefinition*, Purchasable, int32, Amount);
+
 /**
  * 
  */
@@ -49,6 +51,9 @@ public:
 	FPurchaseReturnInfo TryPurchase(UCBPurchasableDefinition* PurchasableDefinition);
 	
 	void RegisterPlayerState(APlayerState* InPlayerState);
+
+	UPROPERTY(BlueprintAssignable)
+	FOnShopItemBought OnShopItemBought;
 
 private:
 

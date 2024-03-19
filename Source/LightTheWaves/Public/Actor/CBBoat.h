@@ -226,6 +226,8 @@ private:
 	void OnPathQueryFinished(uint32 QueryID, ENavigationQueryResult::Type QueryResult, TSharedPtr<FNavigationPath> NavigationPath);
 	FVector FindDesiredLocation(bool bDrawDebug);
 
+	bool bDead = false;
+
 	void SetState(EBoatPathingState NewState);
 
 	void OrientRotationToMovement(float DeltaTime);

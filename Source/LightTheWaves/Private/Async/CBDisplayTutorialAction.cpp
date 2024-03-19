@@ -28,6 +28,11 @@ void UCBDisplayTutorialAction::Activate()
 		return;
 	}
 
+	if (DisplayParams.AttachedActor == nullptr)
+	{
+		return;
+	}
+	
 	const FVector Location = DisplayParams.AttachedActor->GetActorLocation() + DisplayParams.Offset;
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;

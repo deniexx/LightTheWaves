@@ -181,7 +181,7 @@ void ACBPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Ammo = AmmoCapacity;
+	Ammo = StartingAmmo;
 	/** @NOTE: I'm not sure if it's needed to call these here, but there is no real issue in doing that, so might as well leave them */
 	PhysicsConstraintRight->SetConstraintReferenceFrame(EConstraintFrame::Frame1, PivotRight->GetComponentTransform());
 	PhysicsConstraintRight->SetConstraintReferenceFrame(EConstraintFrame::Frame2, HandRight->GetComponentTransform());
@@ -304,10 +304,10 @@ void ACBPawn::HookHandEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 void ACBPawn::Shoot()
 {
 	/** This can be improved, but it's okay for debugging(adding things like aim assist) */
-	const bool bInfiniteAmmo = CVarInfiniteAmmo.GetValueOnAnyThread() > 0;
+	const bool bInfiniteAmmoCheat = CVarInfiniteAmmo.GetValueOnAnyThread() > 0;
 	if (bMortarMode)
 	{
-		if (MortarAmmo > 0 || bInfiniteAmmo)
+		if (MortarAmmo > 0 || bInfiniteAmmoCheat)
 		{
 			const FTransform SpawnTransform(HandCannon->GetForwardVector().ToOrientationRotator(), ShootLocation->GetComponentLocation());
 			ACBProjectile* Actor = GetWorld()->SpawnActorDeferred<ACBProjectile>(ProjectileClassMortar, SpawnTransform, nullptr, this, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
@@ -316,10 +316,11 @@ void ACBPawn::Shoot()
 			UProjectileMovementComponent* ProjectileMovementComponent = Actor->GetComponentByClass<UProjectileMovementComponent>();
 			ProjectileMovementComponent->Velocity *= Power;
 			Actor->FinishSpawning(SpawnTransform);
-			if (!bInfiniteAmmo)
+			if (!bInfiniteAmmoCheat)
 			{
 				--MortarAmmo;
 			}
+			MortarAmmo = FMath::Clamp(MortarAmmo, 0, MortarAmmoCapacity);
 			OnAmmoUpdated.Broadcast(MortarAmmo, MortarAmmoCapacity);
 			UGameplayStatics::PlaySoundAtLocation(this, MortarShootSound, ShootLocation->GetComponentLocation());
 		}
@@ -330,15 +331,16 @@ void ACBPawn::Shoot()
 		return;
 	}
 	
-	if (Ammo > 0 || bInfiniteAmmo)
+	if (Ammo > 0 || bInfiniteAmmoCheat || bInfiniteAmmo)
 	{
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		GetWorld()->SpawnActor<AActor>(ProjectileClassNormal, ShootLocation->GetComponentLocation(), HandCannon->GetForwardVector().ToOrientationRotator(), SpawnParameters);
-		if (!bInfiniteAmmo)
+		if (!bInfiniteAmmoCheat && !bInfiniteAmmo)
 		{
 			--Ammo;
 		}
+		Ammo = FMath::Clamp(Ammo, 0, AmmoCapacity);
 		UGameplayStatics::PlaySoundAtLocation(this, NormalShootSound, ShootLocation->GetComponentLocation());
 		OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
 	}

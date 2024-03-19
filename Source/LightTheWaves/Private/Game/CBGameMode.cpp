@@ -415,6 +415,7 @@ void ACBGameMode::WaveTimer_Elapsed()
 
 void ACBGameMode::RecessTimer_Elapsed()
 {
+	GetWorldTimerManager().ClearTimer(RecessTimerHandle);
 	RecessTimerHandle.Invalidate();
 	StartNewWave();
 }
@@ -460,6 +461,7 @@ void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
 	Data.OldActivity = EGameActivity::Boss;
 	Data.NewActivity = EGameActivity::Wave;
 	OnActivityStateUpdated.Broadcast(Data);
+	OnBossKilledTutorial();
 }
 
 float ACBGameMode::GetRoundTimeElapsed() const
@@ -518,6 +520,11 @@ bool ACBGameMode::IsAnyPathFree(int32 MaxBoatsPerPath, AActor*& OutPath)
 	// Grab a random free path, that way we don't just go in sequence
 	OutPath = FreePaths[FMath::RandRange(0, FreePaths.Num() - 1)];
 	return true;
+}
+
+void ACBGameMode::OnBossKilledTutorial_Implementation()
+{
+	// Implemented in blueprints
 }
 
 AActor* ACBGameMode::GetRandomSpline(USplineComponent*& OutSplineComponent)

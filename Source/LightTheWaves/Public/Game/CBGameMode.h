@@ -157,6 +157,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
 	bool bPlayTutorial;
 
+	UFUNCTION(BlueprintCallable)
+	void RecessTimer_Elapsed();
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -232,6 +235,9 @@ protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void PlayTutorial();
 
+	UFUNCTION(BlueprintNativeEvent)
+	void OnBossKilledTutorial();
+
 private:
 
 	UFUNCTION()
@@ -240,7 +246,10 @@ private:
 	float GetBoatSpawnPeriod();
 	void ProcessBoatSpawning();
 	void ProcessMonsterSpawning();
+
+	UFUNCTION(BlueprintCallable)
 	void SpawnBoss();
+	
 	void ProcessBossSpawning();
 	bool TrySpawnBoat();
 	bool IsAtMaxBoats();
@@ -267,9 +276,6 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 	AActor* SpawnBoat(AActor* PathActor, TSubclassOf<AActor> BoatToSpawn);
-
-	UFUNCTION()
-	void RecessTimer_Elapsed();
 	
 	UFUNCTION()
 	void WaveTimer_Elapsed();
