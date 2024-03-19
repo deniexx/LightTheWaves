@@ -16,6 +16,7 @@ class UCameraComponent;
 class UPhysicsConstraintComponent;
 class UXRDeviceVisualizationComponent;
 class UMotionControllerComponent;
+class UNiagaraSystem;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoUpdated, int32, NewAmmoCount, int32, MaxAmmo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStoredAmmoUpdated, int32, NewStoredAmmo);
@@ -185,6 +186,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Cannon")
 	int32 MortarAmmoNeeded;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Cannon")
+	TObjectPtr<UNiagaraSystem> ShootParticles;
 	
 	UPROPERTY(BlueprintReadOnly)
 	bool bMortarMode = false;

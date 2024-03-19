@@ -20,6 +20,7 @@
 #include "Interface/CBHookOverlapInteractor.h"
 #include "Kismet/GameplayStatics.h"
 #include "LightTheWaves/LightTheWaves.h"
+#include "NiagaraFunctionLibrary.h"
 
 static TAutoConsoleVariable<int32> CVarInfiniteAmmo(
 	TEXT("CB.InfiniteAmmo"),
@@ -322,7 +323,8 @@ void ACBPawn::Shoot()
 			}
 			MortarAmmo = FMath::Clamp(MortarAmmo, 0, MortarAmmoCapacity);
 			OnAmmoUpdated.Broadcast(MortarAmmo, MortarAmmoCapacity);
-			UGameplayStatics::PlaySoundAtLocation(this, MortarShootSound, ShootLocation->GetComponentLocation());
+			UGameplayStatics::PlaySoundAtLocation(this, MortarShootSound, ShootLocation->GetComponentLocation(), ShootLocation->GetComponentRotation());
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ShootParticles, ShootLocation->GetComponentLocation());
 		}
 		else
 		{
@@ -342,6 +344,7 @@ void ACBPawn::Shoot()
 		}
 		Ammo = FMath::Clamp(Ammo, 0, AmmoCapacity);
 		UGameplayStatics::PlaySoundAtLocation(this, NormalShootSound, ShootLocation->GetComponentLocation());
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ShootParticles, ShootLocation->GetComponentLocation(), ShootLocation->GetComponentRotation(), FVector(0.5f));
 		OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
 	}
 	else
