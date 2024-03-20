@@ -431,6 +431,8 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 	if (DestroyingObject != EDestroyingObject::Port)
 	{
 		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(UGameplayStatics::GetPlayerState(this, 0), -ReputationLoss);
+		ICBPlayerInterface::Execute_ApplyChangeToCurrency(UGameplayStatics::GetPlayerState(this, 0 ), CurrencyReward);
+		ICBPlayerInterface::Execute_ApplyChangeToCurrency(UGameplayStatics::GetPlayerState(this, 0 ), PointsReward);
 		FMoveActorToActionData Data;
 		Data.bUseActorLocationAsStart = true;
 		Data.EndLocation = GetActorLocation() - (GetActorUpVector() * SinkingZOffset);
