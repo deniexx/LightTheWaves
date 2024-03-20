@@ -85,7 +85,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> BoatMesh;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -166,6 +166,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TObjectPtr<USoundBase> BoatSpawnSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	TObjectPtr<USoundBase> BoatSunkSound;
 	
 	/** The debris actor to be spawned when the boat has been destroyed */
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")

@@ -122,6 +122,13 @@ struct FBossSpawningSettings
 	/** The maximum time elapsed during the wave, for the boss to be spawned */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
 	float BossSpawnTimePeriodMax = 240.f;
+	/** The different transforms that could be used to spawn the boss tentacles */
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
+	TArray<FTransform> SpawnTransforms;
+
+	/** The number of tentacles that can appear in the wave */
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
+	TArray<int32> MaxTentacles;
 };
 
 class USplineComponent;
@@ -293,7 +300,7 @@ private:
 	TArray<AActor*> Monsters;
 
 	UPROPERTY()
-	AActor* Boss;
+	TArray<AActor*> Bosses;
 
 	bool bNextWaveWaitingForBoss = false;
 	bool bNextWaveWaitingForBoats = false;

@@ -431,13 +431,12 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 	if (DestroyingObject != EDestroyingObject::Port)
 	{
 		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(UGameplayStatics::GetPlayerState(this, 0), -ReputationLoss);
-		ICBPlayerInterface::Execute_ApplyChangeToCurrency(UGameplayStatics::GetPlayerState(this, 0 ), CurrencyReward);
-		ICBPlayerInterface::Execute_ApplyChangeToCurrency(UGameplayStatics::GetPlayerState(this, 0 ), PointsReward);
 		FMoveActorToActionData Data;
 		Data.bUseActorLocationAsStart = true;
 		Data.EndLocation = GetActorLocation() - (GetActorUpVector() * SinkingZOffset);
 		Data.InterpDuration = 2.f;
 		UCBMoveActorToAction* Action = UCBMoveActorToAction::Execute(this, this, Data);
+		UGameplayStatics::SpawnSoundAtLocation(this, BoatSunkSound, GetActorLocation());
 		if (IsValid(this))
 		{
 			Action->OnActorFinishedMoving.AddDynamic(this, &ThisClass::DestroyOnFinishedMoving);
@@ -446,6 +445,8 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 	else
 	{
 		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(UGameplayStatics::GetPlayerState(this, 0), ReputationRegain);
+		ICBPlayerInterface::Execute_ApplyChangeToCurrency(UGameplayStatics::GetPlayerState(this, 0 ), CurrencyReward);
+		ICBPlayerInterface::Execute_ApplyChangeToPoints(UGameplayStatics::GetPlayerState(this, 0 ), PointsReward);
 		FDitherActorParams Params;
 		Params.Duration = 2.f;
 		Params.DitherMode = EDitherMode::DitherOut;

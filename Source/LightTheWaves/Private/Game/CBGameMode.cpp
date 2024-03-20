@@ -109,10 +109,15 @@ void ACBGameMode::GameFinished(const FGameLostData& Data)
 		}
 	}
 
-	if (IsValid(Boss))
+	if (!Bosses.IsEmpty())
 	{
 		// @TODO: When boss reiteration happens, make sure that the boss has a going back down animation, which can be played here
-		Boss->Destroy();
+		for (const auto& Boss : Bosses)
+		{
+			Boss->Destroy();
+		}
+
+		Bosses.Empty();
 	}
 	
 	OnGameFinished(Data);
@@ -390,7 +395,7 @@ void ACBGameMode::WaveTimer_Elapsed()
 	GetWorldTimerManager().ClearTimer(BossSpawnTimerHandle);
 	WaveTimerHandle.Invalidate();
 
-	if (Boss)
+	if (!Bosses.IsEmpty())
 	{
 		bNextWaveWaitingForBoss = true;
 		return;
@@ -430,26 +435,32 @@ void ACBGameMode::SpawnBoss()
 {
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	// @TODO: Figure out a way to know where the boss should spawn, probably a variable on the spawn settings
-	const FVector SpawnLocation = FVector(-458.000000,7278.000000,3450.000000);
-	Boss = GetWorld()->SpawnActor<AActor>(BossSpawningSettings.BossActorClass, SpawnLocation, FRotator::ZeroRotator, SpawnParameters);
+
+	const int32 Count = (WaveNumber - 1) < 0 ? 1 : BossSpawningSettings.MaxTentacles[WaveNumber - 1];
+	for (int32 i = 0; i < Count; ++i)
+	{
+		FTransform SpawnTransform = BossSpawningSettings.SpawnTransforms[FMath::RandRange(0, BossSpawningSettings.SpawnTransforms.Num() - 1)];
+		AActor* Boss = GetWorld()->SpawnActor<AActor>(BossSpawningSettings.BossActorClass, SpawnTransform, SpawnParameters);
+    	Boss->OnDestroyed.AddDynamic(this, &ThisClass::OnBossKilled);
+    	Bosses.Add(Boss);
+	}
 
 	FActivityStateUpdatedData Data;
 	Data.OldActivity = EGameActivity::Wave;
 	Data.NewActivity = EGameActivity::Boss;
 	Data.ActivityFinishedState = EActivityFinishedState::Ongoing;
 	OnActivityStateUpdated.Broadcast(Data);
-	
-	OnBossSpawned.Broadcast(Boss);
-	Boss->OnDestroyed.AddDynamic(this, &ThisClass::OnBossKilled);
+
+	// @TODO: This is super hacky! Might need to be fixed, for now it works well for the tutorial
+	OnBossSpawned.Broadcast(Bosses[0]);
 }
 
 void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
 {
 	UE_LOG(CBLog, Log, TEXT("Boss Defeated!"));
-	Boss = nullptr;
+	Bosses.Remove(DestroyedActor);
 	
-	if (bNextWaveWaitingForBoss)
+	if (bNextWaveWaitingForBoss && Bosses.IsEmpty())
 	{
 		bNextWaveWaitingForBoss = false;
 		WaveTimer_Elapsed();
