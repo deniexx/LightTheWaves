@@ -55,6 +55,9 @@ public:
 	virtual float GetMaxHealth_Implementation() const override;
 	virtual float GetCurrentHealth_Implementation() const override;
 	/**End Destroyable Object interface */
+
+	UFUNCTION(BlueprintCallable, Category = "Boats")
+	void MonsterZoneStateUpdate(bool bInMonsterZone);
 	
 	UPROPERTY(BlueprintAssignable, Category = "Boat Properties")
 	FOnBoatDead OnBoatDead;
@@ -162,6 +165,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	float CorrectionDistanceOffset = 100.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Boat Properties")
+	float SafeZoneSpeedMultiplier = 2.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TObjectPtr<UStaticMesh> BoatPathingVisMesh;
 
@@ -253,7 +259,8 @@ private:
 	FORCEINLINE bool IsFollowingPath() const { return CurrentPathingState == EBoatPathingState::FollowingPath; }
 	FORCEINLINE bool IsNotFollowingLight() const { return CurrentPathingState != EBoatPathingState::FollowingLight; }
 
-	float Health;
+	float Health = 100.f;
+	float ActualMovementSpeed = 0.f;
 
 	int32 CurrentQueryIndex = INDEX_NONE;
 

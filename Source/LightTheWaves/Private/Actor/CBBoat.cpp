@@ -60,6 +60,7 @@ void ACBBoat::BeginPlay()
 {
 	Super::BeginPlay();
 
+	MonsterZoneStateUpdate(false);
 	Health = MaxHealth;
 	NavAgentProperties = NavAgentProperties.DefaultProperties;
 	NavAgentProperties.AgentRadius = SphereTrigger->GetUnscaledSphereRadius();
@@ -126,7 +127,7 @@ void ACBBoat::FollowLight(float DeltaTime)
 	
 	MovementDirection = (FollowTarget->GetComponentLocation() - GetActorLocation()).GetSafeNormal();
 	MovementDirection.Z = 0;
-	AddActorWorldOffset(MovementDirection * (MovementSpeed * (LightFollowSpeedMultiplier + AdditiveSpeed))  * DeltaTime);
+	AddActorWorldOffset(MovementDirection * (ActualMovementSpeed * (LightFollowSpeedMultiplier + AdditiveSpeed))  * DeltaTime);
 }
 
 void ACBBoat::FollowPath(float DeltaTime)
@@ -140,7 +141,7 @@ void ACBBoat::FollowPath(float DeltaTime)
 	const FVector LocationOnSpline = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
 	MovementDirection = CurrentPath->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
 	MovementDirection.Z = 0;
-	AddActorWorldOffset(MovementDirection * MovementSpeed * DeltaTime);
+	AddActorWorldOffset(MovementDirection * ActualMovementSpeed * DeltaTime);
 
 	const float DistanceFromEnd = (GetActorLocation() - CurrentPath->GetWorldLocationAtSplinePoint(CurrentPath->GetNumberOfSplinePoints() - 1)).Length();
 	if (FMath::Abs(DistanceFromEnd) < 100.f)
@@ -411,6 +412,11 @@ float ACBBoat::GetMaxHealth_Implementation() const
 float ACBBoat::GetCurrentHealth_Implementation() const
 {
 	return Health;
+}
+
+void ACBBoat::MonsterZoneStateUpdate(bool bInMonsterZone)
+{
+	ActualMovementSpeed = bInMonsterZone ? MovementSpeed : MovementSpeed * SafeZoneSpeedMultiplier;
 }
 
 void ACBBoat::DestroyOnFinishedMoving(AActor* MovingActor)
