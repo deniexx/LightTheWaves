@@ -129,6 +129,15 @@ struct FBossSpawningSettings
 	/** The number of tentacles that can appear in the wave */
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
 	TArray<int32> MaxTentacles;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
+	TObjectPtr<USoundBase> BossSpawningSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
+	TObjectPtr<USoundBase> BossSong;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning|Boss")
+	float BossSpawnSoundDuration;
 };
 
 class USplineComponent;
@@ -286,6 +295,9 @@ private:
 	
 	UFUNCTION()
 	void WaveTimer_Elapsed();
+
+	UFUNCTION(BlueprintCallable)
+	void PlayBossSpawningMusic();
 	
 	UFUNCTION()
 	void OnBossKilled(AActor* DestroyedActor);
@@ -302,6 +314,9 @@ private:
 	UPROPERTY()
 	TArray<AActor*> Bosses;
 
+	UPROPERTY()
+	UAudioComponent* BossAudioComponent;
+	
 	bool bNextWaveWaitingForBoss = false;
 	bool bNextWaveWaitingForBoats = false;
 

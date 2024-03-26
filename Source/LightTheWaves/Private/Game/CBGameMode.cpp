@@ -8,6 +8,7 @@
 #include "Actor/CBBoat.h"
 #include "Actor/CBMonsterHazard.h"
 #include "Async/CBMonsterSpawnerAction.h"
+#include "Components/AudioComponent.h"
 #include "Components/SplineComponent.h"
 #include "Interface/CBPath.h"
 #include "Interface/CBPlayerInterface.h"
@@ -428,7 +429,13 @@ void ACBGameMode::RecessTimer_Elapsed()
 void ACBGameMode::ProcessBossSpawning()
 {
 	const float BossSpawnDelay = FMath::FRandRange(BossSpawningSettings.BossSpawnTimePeriodMin, BossSpawningSettings.BossSpawnTimePeriodMax);
-	GetWorldTimerManager().SetTimer(BossSpawnTimerHandle, this, &ThisClass::SpawnBoss, BossSpawnDelay, false);
+	GetWorldTimerManager().SetTimer(BossSpawnTimerHandle, this, &ThisClass::PlayBossSpawningMusic, BossSpawnDelay - BossSpawningSettings.BossSpawnSoundDuration, false);
+}
+
+void ACBGameMode::PlayBossSpawningMusic()
+{
+	UGameplayStatics::PlaySound2D(this, BossSpawningSettings.BossSpawningSound);
+	GetWorldTimerManager().SetTimer(BossSpawnTimerHandle, this, &ThisClass::SpawnBoss, BossSpawningSettings.BossSpawnSoundDuration, false);
 }
 
 void ACBGameMode::SpawnBoss()
@@ -450,6 +457,7 @@ void ACBGameMode::SpawnBoss()
     	Bosses.Add(Boss);
 	}
 
+	BossAudioComponent = UGameplayStatics::SpawnSound2D(this, BossSpawningSettings.BossSong);
 	FActivityStateUpdatedData Data;
 	Data.OldActivity = EGameActivity::Wave;
 	Data.NewActivity = EGameActivity::Boss;
@@ -464,12 +472,25 @@ void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
 {
 	UE_LOG(CBLog, Log, TEXT("Boss Defeated!"));
 	Bosses.Remove(DestroyedActor);
+
+	if (!Bosses.IsEmpty()) return;
 	
-	if (bNextWaveWaitingForBoss && Bosses.IsEmpty())
+	if (bNextWaveWaitingForBoss)
 	{
 		bNextWaveWaitingForBoss = false;
 		WaveTimer_Elapsed();
+		if (IsValid(BossAudioComponent))
+		{
+			BossAudioComponent->Stop();
+			BossAudioComponent->DestroyComponent();
+		}
 		return;
+	}
+
+	if (IsValid(BossAudioComponent))
+	{
+		BossAudioComponent->Stop();
+		BossAudioComponent->DestroyComponent();
 	}
 	
 	FActivityStateUpdatedData Data;
