@@ -195,7 +195,7 @@ protected:
 	float WaveDuration = 300.f;
 
 	/** How long should the recess period last for? */
-	UPROPERTY(EditDefaultsOnly, Category = "Waves", meta = (Units = "s"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Waves", meta = (Units = "s"))
 	float RecessPeriodDuration = 30.f;
 	
 	UPROPERTY(BlueprintAssignable, Category = "Activity")

@@ -437,9 +437,14 @@ void ACBGameMode::SpawnBoss()
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	const int32 Count = (WaveNumber - 1) < 0 ? 1 : BossSpawningSettings.MaxTentacles[WaveNumber - 1];
+	Algo::Sort(BossSpawningSettings.SpawnTransforms, [this](const FTransform& Item1, const FTransform& Item2)
+	{
+		// @NOTE: Adjust this if we want to add in weighting for ones that are further ahead
+		return FMath::FRand() < 0.5f;
+	});
 	for (int32 i = 0; i < Count; ++i)
 	{
-		FTransform SpawnTransform = BossSpawningSettings.SpawnTransforms[FMath::RandRange(0, BossSpawningSettings.SpawnTransforms.Num() - 1)];
+		FTransform SpawnTransform = BossSpawningSettings.SpawnTransforms[i];
 		AActor* Boss = GetWorld()->SpawnActor<AActor>(BossSpawningSettings.BossActorClass, SpawnTransform, SpawnParameters);
     	Boss->OnDestroyed.AddDynamic(this, &ThisClass::OnBossKilled);
     	Bosses.Add(Boss);
