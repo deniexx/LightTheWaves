@@ -63,6 +63,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Player Attributes")
 	void IncreaseMaxReputation(float IncreaseAmount);	
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Light Attributes")
+	void IncreaseFollowSpeed(float IncreaseAmount);
+	
 	virtual FOnAttributeChanged& OnPointsChangedEvent() = 0;
 	virtual FOnAttributeChanged& OnCurrencyChangedEvent() = 0;
 	virtual FOnReputationChanged& OnReputationChangedEvent() = 0;

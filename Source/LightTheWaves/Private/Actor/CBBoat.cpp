@@ -16,6 +16,7 @@
 #include "Interface/CBPlayerInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "CBBlueprintFunctionLibrary.h"
+#include "Subsystem/CBShopSubsystem.h"
 
 static TAutoConsoleVariable<int32> CVarDrawDebugBoatPathing(
 	TEXT("ShowDebugBoatPathing"),
@@ -111,10 +112,21 @@ void ACBBoat::FollowLight(float DeltaTime)
 	{
 		Execute_OnLightFocusEnd(this);
 	}
+
+	if (!ShopSubsystem)
+	{
+		ShopSubsystem = UCBBlueprintFunctionLibrary::GetShopSubsystem(this);
+	}
+
+	float AdditiveSpeed = 0.f;
+	if (ShopSubsystem)
+	{
+		AdditiveSpeed = ShopSubsystem->AdditiveFollowSpeed;
+	}
 	
 	MovementDirection = (FollowTarget->GetComponentLocation() - GetActorLocation()).GetSafeNormal();
 	MovementDirection.Z = 0;
-	AddActorWorldOffset(MovementDirection * (MovementSpeed * LightFollowSpeedMultiplier)  * DeltaTime);
+	AddActorWorldOffset(MovementDirection * (MovementSpeed * (LightFollowSpeedMultiplier + AdditiveSpeed))  * DeltaTime);
 }
 
 void ACBBoat::FollowPath(float DeltaTime)

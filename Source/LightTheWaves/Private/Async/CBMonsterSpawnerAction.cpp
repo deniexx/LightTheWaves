@@ -110,6 +110,11 @@ void UCBMonsterSpawnerAction::ShuffleBoatArray()
 
 void UCBMonsterSpawnerAction::SpawnMonster(const FVector& Vector, AActor* Target) const
 {
+	if (Vector.X < -8390.f || Vector.X > 18000.f)
+	{
+		return;
+	}
+	
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 

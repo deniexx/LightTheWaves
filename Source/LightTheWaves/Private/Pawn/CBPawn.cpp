@@ -56,6 +56,7 @@ ACBPawn::ACBPawn()
 	MotionControllerRightAim = CreateDefaultSubobject<UMotionControllerComponent>(FName("MotionControllerRightAim"));
 	RightHandOverlapBox = CreateDefaultSubobject<UBoxComponent>(FName("RightHandOverlapBox"));
 	RecenterWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(FName("RecenterWidgetComponent"));
+	CannonShotVis = CreateDefaultSubobject<UStaticMeshComponent>(FName("CannonShotVis"));
 #pragma endregion
 
 #pragma region Attachments
@@ -68,6 +69,7 @@ ACBPawn::ACBPawn()
 	ShootLocation->SetupAttachment(HandCannon);
 	PivotLeft->SetupAttachment(MotionControllerLeft);
 	PhysicsConstraintLeft->SetupAttachment(PivotLeft);
+	CannonShotVis->SetupAttachment(HandCannon);
 
 	Camera->SetupAttachment(GetRootComponent());
 	RecenterWidgetComponent->SetupAttachment(Camera);
@@ -110,6 +112,7 @@ ACBPawn::ACBPawn()
 	MotionControllerLeftAim->SetTrackingMotionSource(FName("LeftAim"));
 	MotionControllerLeft->SetAssociatedPlayerIndex(0);
 	PivotLeft->SetHiddenInGame(true);
+	CannonShotVis->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	/** These settings are required to have propertly physical-interacting hands */
 	HandCannon->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -183,6 +186,7 @@ void ACBPawn::BeginPlay()
 	Super::BeginPlay();
 
 	Ammo = StartingAmmo;
+	CannonShotVis->SetVisibility(false);
 	/** @NOTE: I'm not sure if it's needed to call these here, but there is no real issue in doing that, so might as well leave them */
 	PhysicsConstraintRight->SetConstraintReferenceFrame(EConstraintFrame::Frame1, PivotRight->GetComponentTransform());
 	PhysicsConstraintRight->SetConstraintReferenceFrame(EConstraintFrame::Frame2, HandRight->GetComponentTransform());
@@ -259,17 +263,29 @@ void ACBPawn::Reload_Implementation(bool bMortar)
 			}
 			UGameplayStatics::PlaySoundAtLocation(this, ReloadSound, HandCannon->GetComponentLocation(), FRotator::ZeroRotator);
 		}
+
+		if (MortarAmmo > 0)
+		{
+			CannonShotVis->SetVisibility(true);
+		}
 		OnStoredAmmoUpdated.Broadcast(bMortar ? StoredMortarAmmo : StoredMortarAmmo + MortarAmmo);
 		OnAmmoUpdated.Broadcast(MortarAmmo, MortarAmmoCapacity);
 	}
 	else
 	{
+		CannonShotVis->SetVisibility(false);
 		Ammo = AmmoCapacity;
 		OnAmmoUpdated.Broadcast(Ammo, AmmoCapacity);
 		OnStoredAmmoUpdated.Broadcast(StoredMortarAmmo + MortarAmmo);
 		UGameplayStatics::PlaySoundAtLocation(this, ReloadSound, HandCannon->GetComponentLocation(), FRotator::ZeroRotator);
 	}
 
+	if (!bMortar || MortarAmmo <= 0)
+	{
+		CannonShotVis->SetVisibility(false);
+	}
+
+	OnMortarModeSwitch.Broadcast(bMortar);
 	bMortarMode = bMortar;
 }
 
@@ -322,6 +338,10 @@ void ACBPawn::Shoot()
 				--MortarAmmo;
 			}
 			MortarAmmo = FMath::Clamp(MortarAmmo, 0, MortarAmmoCapacity);
+			if (MortarAmmo == 0)
+			{
+				CannonShotVis->SetVisibility(false);
+			}
 			OnAmmoUpdated.Broadcast(MortarAmmo, MortarAmmoCapacity);
 			UGameplayStatics::PlaySoundAtLocation(this, MortarShootSound, ShootLocation->GetComponentLocation(), ShootLocation->GetComponentRotation());
 			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ShootParticles, ShootLocation->GetComponentLocation());

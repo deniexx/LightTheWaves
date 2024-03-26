@@ -47,7 +47,7 @@ protected:
 	UFUNCTION()
 	void OnNewPathChosen(USplineComponent* NewPath);
 
-	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> MonsterMesh;
 
 	/** How long should the monster stay on the field */

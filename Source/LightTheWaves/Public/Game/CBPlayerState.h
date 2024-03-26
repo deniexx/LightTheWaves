@@ -27,6 +27,7 @@ public:
 	virtual float GetTotalCurrency_Implementation() const override;
 	virtual void ApplyChangeToPlayerReputation_Implementation(float Delta) override;
 	virtual void IncreaseMaxReputation_Implementation(float IncreaseAmount) override;
+	virtual void IncreaseFollowSpeed_Implementation(float IncreaseAmount) override;
 	virtual FOnAttributeChanged& OnCurrencyChangedEvent() override;
 	virtual FOnAttributeChanged& OnPointsChangedEvent() override;
 	virtual FOnReputationChanged& OnReputationChangedEvent() override;

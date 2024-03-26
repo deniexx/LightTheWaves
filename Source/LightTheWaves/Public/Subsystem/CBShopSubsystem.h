@@ -55,6 +55,9 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnShopItemBought OnShopItemBought;
 
+	UPROPERTY(BlueprintReadWrite)
+	float AdditiveFollowSpeed = 0;
+
 private:
 
 	UPROPERTY()

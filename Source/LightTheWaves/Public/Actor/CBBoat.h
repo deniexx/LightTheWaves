@@ -9,6 +9,7 @@
 #include "Interface/CBDestroyableObject.h"
 #include "CBBoat.generated.h"
 
+class UCBShopSubsystem;
 class USphereComponent;
 
 UENUM(BlueprintType)
@@ -255,6 +256,9 @@ private:
 	float Health;
 
 	int32 CurrentQueryIndex = INDEX_NONE;
+
+	UPROPERTY()
+	UCBShopSubsystem* ShopSubsystem;
 	
 public:
 	

@@ -20,6 +20,7 @@ class UNiagaraSystem;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoUpdated, int32, NewAmmoCount, int32, MaxAmmo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStoredAmmoUpdated, int32, NewStoredAmmo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMortarModeSwitch, bool, bNewMode);
 
 UCLASS()
 class LIGHTTHEWAVES_API ACBPawn : public APawn, public ICBGunInterface
@@ -75,6 +76,9 @@ protected:
 	/** This determines the spawn location of the projectile */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
 	TObjectPtr<USceneComponent> ShootLocation;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
+	TObjectPtr<UStaticMeshComponent> CannonShotVis;
 	/** End Left Hand */
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -199,6 +203,8 @@ protected:
 	UPROPERTY(BlueprintAssignable)
 	FOnStoredAmmoUpdated OnStoredAmmoUpdated;
 
+	UPROPERTY(BlueprintAssignable)
+	FOnMortarModeSwitch OnMortarModeSwitch;
 	
 public:	
 	// Called every frame

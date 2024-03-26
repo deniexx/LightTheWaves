@@ -121,6 +121,12 @@ void ACBPlayerState::IncreaseMaxReputation_Implementation(float IncreaseAmount)
 	Execute_ApplyChangeToPlayerReputation(this, Delta);
 }
 
+void ACBPlayerState::IncreaseFollowSpeed_Implementation(float IncreaseAmount)
+{
+	if (!UCBBlueprintFunctionLibrary::GetShopSubsystem(this)) return;
+	UCBBlueprintFunctionLibrary::GetShopSubsystem(this)->AdditiveFollowSpeed += IncreaseAmount;
+}
+
 int32 ACBPlayerState::GetCurrency_Implementation() const
 {
 	return Currency;
