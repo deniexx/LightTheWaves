@@ -453,6 +453,7 @@ void ACBGameMode::SpawnBoss()
 	{
 		FTransform SpawnTransform = BossSpawningSettings.SpawnTransforms[i];
 		AActor* Boss = GetWorld()->SpawnActor<AActor>(BossSpawningSettings.BossActorClass, SpawnTransform, SpawnParameters);
+		Boss->SetActorScale3D(BossSpawningSettings.SpawnTransforms[i].GetScale3D());
     	Boss->OnDestroyed.AddDynamic(this, &ThisClass::OnBossKilled);
     	Bosses.Add(Boss);
 	}
