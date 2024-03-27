@@ -186,7 +186,7 @@ void ACBBoat::GeneratePathCustom(bool bDrawDebug)
 	ReturnToPathPoints.Add(GetActorLocation());
 	TArray<FHitResult> HitResults;
 	const TArray<AActor*> ActorsToIgnore = { this };
-	const float Radius = SphereTrigger->GetScaledSphereRadius();
+	const float Radius = SphereTrigger->GetScaledSphereRadius() * 1.5f;
 	if (UKismetSystemLibrary::SphereTraceMultiForObjects(GetWorld(), GetActorLocation(), DesiredLocation, Radius, ObjectTypesToQuery, false, ActorsToIgnore, EDrawDebugTrace::None, HitResults, true))
 	{
 		// If obstacles have been found, find an offset vector and add it to the path points array
