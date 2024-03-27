@@ -465,6 +465,7 @@ void ACBBoat::Die(EDestroyingObject DestroyingObject)
 		ICBPlayerInterface::Execute_ApplyChangeToPlayerReputation(UGameplayStatics::GetPlayerState(this, 0), ReputationRegain);
 		ICBPlayerInterface::Execute_ApplyChangeToCurrency(UGameplayStatics::GetPlayerState(this, 0 ), CurrencyReward);
 		ICBPlayerInterface::Execute_ApplyChangeToPoints(UGameplayStatics::GetPlayerState(this, 0 ), PointsReward);
+		UGameplayStatics::PlaySound2D(this, BoatReachedPortSound);
 		FDitherActorParams Params;
 		Params.Duration = 2.f;
 		Params.DitherMode = EDitherMode::DitherOut;

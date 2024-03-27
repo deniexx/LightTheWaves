@@ -176,6 +176,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
 	TObjectPtr<USoundBase> BoatSunkSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
+	TObjectPtr<USoundBase> BoatReachedPortSound;
 	
 	/** The debris actor to be spawned when the boat has been destroyed */
 	UPROPERTY(EditDefaultsOnly, Category = "Boat Properties")
