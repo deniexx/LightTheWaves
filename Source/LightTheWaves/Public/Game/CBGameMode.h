@@ -141,6 +141,9 @@ struct FBossSpawningSettings
 };
 
 class USplineComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWaveStarted, int32, WaveNumber);
+
 /**
  * 
  */
@@ -221,6 +224,9 @@ protected:
 		
 	UPROPERTY(BlueprintAssignable, Category = "Activity")
 	FOnGameStarted OnGameStarted;
+
+	UPROPERTY(BlueprintAssignable, Category = "Activity")
+	FOnWaveStarted OnWaveStarted;
 
 	int32 WaveNumber = 0;
 

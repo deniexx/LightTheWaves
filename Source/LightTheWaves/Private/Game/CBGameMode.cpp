@@ -184,7 +184,7 @@ void ACBGameMode::StartWaveGameplay_Implementation()
 		bPlayTutorial = false;
 		return;
 	}
-
+	
 	OnGameStarted.Broadcast();
 	StartNewWave();
 }
@@ -385,6 +385,7 @@ void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
 	}
 
 	++WaveNumber;
+	OnWaveStarted.Broadcast(WaveNumber);
 	GetWorldTimerManager().SetTimer(WaveTimerHandle, this, &ThisClass::WaveTimer_Elapsed, WaveDuration, false);
 
 	SpawnedBoats = 0;
