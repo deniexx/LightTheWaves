@@ -62,6 +62,8 @@ protected:
 
 	int32 SpawnAttempts = 0;
 
+	AActor* CurrTarget;
+
 	UPROPERTY()
 	UObject* WCO;
 };

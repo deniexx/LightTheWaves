@@ -70,9 +70,9 @@ void UCBMonsterSpawnerAction::AttemptSpawn()
 		return;
 	}
 
-	if ( Monsters.Num() >= Boats.Num() + 1)
+	if (Monsters.Num() >= Boats.Num() + 1)
 	{
-		UE_LOG(CBLog, Warning, TEXT("No boats, skipping monster spawn!"));
+		UE_LOG(CBLog, Warning, TEXT("More monsters than boats, skipping monster spawn!"));
 		return;
 	}
 	
@@ -80,6 +80,7 @@ void UCBMonsterSpawnerAction::AttemptSpawn()
 	ShuffleBoatArray();
 	if (AActor* Target = ChooseTarget())
 	{
+		CurrTarget = Target;
 		FVector SpawnLocation;
 		if (FindDesirableSpawnLocationAroundTarget(Target, SpawnLocation))
 		{
@@ -87,6 +88,7 @@ void UCBMonsterSpawnerAction::AttemptSpawn()
 		}
 		else if (SpawnAttempts < SpawnerParams.MaxSpawnAttempts)
 		{
+			UE_LOG(CBLog, Warning, TEXT("Couldn't find a desirable spawn location! Attempting another spawn"));
 			AttemptSpawn();
 		}
 	}
@@ -95,8 +97,6 @@ void UCBMonsterSpawnerAction::AttemptSpawn()
 		UE_LOG(CBLog, Warning, TEXT("Target not found, but will spawn through boat numbers"));
 		// @NOTE: Not sure if we need this
 	}
-
-	UE_LOG(CBLog, Warning, TEXT("Failing Spawn, because of no target and numbers"));
 }
 
 void UCBMonsterSpawnerAction::ShuffleBoatArray()
@@ -110,7 +110,7 @@ void UCBMonsterSpawnerAction::ShuffleBoatArray()
 
 void UCBMonsterSpawnerAction::SpawnMonster(const FVector& Vector, AActor* Target) const
 {
-	if (Vector.X < -8390.f || Vector.X > 18000.f)
+	if (Vector.X < SpawnerParams.MinDistanceFromStart || Vector.X > 23000.f)
 	{
 		return;
 	}
@@ -119,7 +119,6 @@ void UCBMonsterSpawnerAction::SpawnMonster(const FVector& Vector, AActor* Target
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	// Add a random rotation to the monster, might have to remove this?
-	UE_LOG(CBLog, Log, TEXT("Spawning Monster"));
 	const FRotator SpawnRotation = FRotator(0.f, FMath::FRandRange(0.f, 359.f), 0.f);
 	if (AActor* NewMonster = GetWorld()->SpawnActor<AActor>(SpawnerParams.MonsterClass, Vector, SpawnRotation, SpawnParameters))
 	{
@@ -149,6 +148,7 @@ AActor* UCBMonsterSpawnerAction::ChooseTarget()
 		return Boat;
 	}
 
+	UE_LOG(CBLog, Warning, TEXT("Target not found!!"));
 	return nullptr;
 }
 
@@ -159,7 +159,7 @@ bool UCBMonsterSpawnerAction::FindDesirableSpawnLocationAroundTarget(AActor* Act
 	const float InputKey = Path->FindInputKeyClosestToWorldLocation(Actor->GetActorLocation());
 	const float AlongSplineDistanceToActor = Path->GetDistanceAlongSplineAtSplineInputKey(InputKey);
 	const float RandomDistanceToSpawn = FMath::FRandRange(SpawnerParams.MinMaxDistanceToBoat.X, SpawnerParams.MinMaxDistanceToBoat.Y);
-	const float AlongSplineMaxDistanceToSpawn = PathLength - SpawnerParams.MinDistanceFromStartAndFinish;
+	const float AlongSplineMaxDistanceToSpawn = PathLength - SpawnerParams.MinDistanceFromFinish;
 	const float RandomOffsetDistance = AlongSplineDistanceToActor + RandomDistanceToSpawn;
 	const float DistanceToSpawnOn = FMath::Clamp(RandomOffsetDistance, RandomOffsetDistance, AlongSplineMaxDistanceToSpawn);
 	OutLocation = Path->GetWorldLocationAtDistanceAlongSpline(DistanceToSpawnOn);
@@ -231,10 +231,15 @@ bool UCBMonsterSpawnerAction::AnyBoatCloseToLocation(const FVector& Vector, floa
 {
 	for (const auto Boat : Boats)
 	{
+		if (Boat == CurrTarget) continue;
 		if ((Boat->GetActorLocation() - Vector).Length() < MinDistanceRequired)
 		{
-			CloseActor = Boat;
-			return true;
+			if (Boat->GetActorLocation().X - Vector.X < SpawnerParams.MinDistanceBehindNonTargetBoat)
+			{
+				UE_LOG(CBLog, Warning, TEXT("Monster too close to a boat, skipping spawn!"));
+				CloseActor = Boat;
+				return true;	
+			}
 		}
 	}
 
@@ -246,14 +251,16 @@ bool UCBMonsterSpawnerAction::AttemptAdjustSpawnLocationForBoat(FVector& Locatio
 	const float DistanceToCloseActor = (CloseActor->GetActorLocation() - Location).Length();
 	const float DistanceOnSpline = AlongSplineDistanceToActor - DistanceToCloseActor;
 	const FVector SplineLocation = Path->GetWorldLocationAtDistanceAlongSpline(DistanceOnSpline);
-
+	
 	if ((SplineLocation - Location).Length() < SpawnerParams.MinMaxDistanceToBoat.X)
 	{
+		UE_LOG(CBLog, Warning, TEXT("Couldn't adjust location due to min distance to boat!"));
 		return false;
 	}
 	
-	if (DistanceOnSpline - Path->GetSplineLength() < SpawnerParams.MinDistanceFromStartAndFinish)
+	if (DistanceOnSpline - Path->GetSplineLength() < SpawnerParams.MinDistanceFromFinish)
 	{
+		UE_LOG(CBLog, Warning, TEXT("Couldn't adjust location due to min distance from start and finish!"));
 		return false;
 	}
 

@@ -27,6 +27,15 @@ static TAutoConsoleVariable<int32> CVarDrawDebugMonsterSpawn(
 	ECVF_Cheat
 );
 
+static TAutoConsoleVariable<int32> CVarSkipTutorial(
+	TEXT("CB.SkipTutorial"),
+	0,
+	TEXT("Should the tutorial be skipped")
+	TEXT(" 0: Tutorial will not be skipped/n")
+	TEXT(" 1: Tutorial will be skipped/n"),
+	ECVF_Cheat
+);
+
 FOnActivityStateUpdated& ACBGameMode::OnActivityStateUpdatedEvent()
 {
 	return OnActivityStateUpdated;
@@ -168,7 +177,8 @@ void ACBGameMode::StartWaveGameplay_Implementation()
 		return;
 	}
 
-	if (bPlayTutorial)
+	const bool bSkipTutorial = CVarSkipTutorial.GetValueOnAnyThread() > 0;
+	if (bPlayTutorial && !bSkipTutorial)
 	{
 		PlayTutorial();
 		bPlayTutorial = false;
@@ -368,10 +378,10 @@ void ACBGameMode::StartNewWave(EGameActivity PreviousActivity)
 {
 	if (WaveNumber == 5)
 	{
-		// @TODO: Maybe remove after play party
 		FGameLostData GameLostData;
-		GameLostData.LoseReason = "Being too good!";
+		GameLostData.LoseReason = "Being too good! (Demo Completed)";
 		Cast<ICBPlayerInterface>(UGameplayStatics::GetPlayerState(this, 0))->OnGameLostEvent().Broadcast(GameLostData);
+		return;
 	}
 
 	++WaveNumber;
@@ -408,7 +418,8 @@ void ACBGameMode::WaveTimer_Elapsed()
 		bNextWaveWaitingForBoats = true;
 		return;
 	}
-	
+
+	ICBPlayerInterface::Execute_ApplyChangeToPoints(UGameplayStatics::GetPlayerState(this, 0), 200 * (WaveNumber * 0.5));
 	GetWorldTimerManager().ClearTimer(MonsterSpawnTimerHandle);
 	FActivityStateUpdatedData Data;
 	Data.OldActivity = EGameActivity::Wave;
@@ -499,7 +510,11 @@ void ACBGameMode::OnBossKilled(AActor* DestroyedActor)
 	Data.OldActivity = EGameActivity::Boss;
 	Data.NewActivity = EGameActivity::Wave;
 	OnActivityStateUpdated.Broadcast(Data);
-	OnBossKilledTutorial();
+	const bool bSkipTutorial = CVarSkipTutorial.GetValueOnAnyThread() > 0;
+	if (!bSkipTutorial)
+	{
+		OnBossKilledTutorial();
+	}
 }
 
 float ACBGameMode::GetRoundTimeElapsed() const
