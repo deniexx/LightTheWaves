@@ -239,9 +239,12 @@ void ACBBoat::OnPathQueryFinished(uint32 QueryID, ENavigationQueryResult::Type Q
 	if (QueryResult == ENavigationQueryResult::Success)
 	{
 		ReturnToPathPoints.Empty();
+		const float ActorZ = GetActorLocation().Z;
 		for (const auto& PathPoint : NavigationPath->GetPathPoints())
 		{
-			ReturnToPathPoints.Add(PathPoint.Location);
+			FVector Point = PathPoint.Location;
+			Point.Z = ActorZ;
+			ReturnToPathPoints.Add(Point);
 			PointIndex = 0;
 		}
 
@@ -526,7 +529,7 @@ EBoatPathingState ACBBoat::EvaluateStatePostFollowLight()
 		OnPathingActorLeftPath.Broadcast(this);
 		TargetSpline = CurrentPath;
 		GenerateNewPath();
-		GetWorldTimerManager().SetTimer(RedrawInstancedMeshTimerHandle, this, &ACBBoat::AddInstancedMeshesForPathVis, RedrawInstancedMeshDelay, true);
+		GetWorldTimerManager().SetTimer(RedrawInstancedMeshTimerHandle, this, &ACBBoat::RegeneratePath_Elapsed, RedrawInstancedMeshDelay, true);
 	}
 	
 	OnNewPathChosen.Broadcast(CurrentPath);
@@ -546,13 +549,12 @@ void ACBBoat::AddInstancedMeshesForPathVis()
 
 	const FBox Bounds = BoatPathingVisMesh->GetBoundingBox();
 	const float Spacing = Bounds.Max.X - Bounds.Min.X;
-
 	const float Length = (GetActorLocation() - CachedDestination).Length();
-	const int32 NumberOfInstances = FMath::FloorToInt32(Length / Spacing);
-	const float DistanceToEnd = BoatPathingVisSpline->GetSplineLength();
-	for (int i = 0; i < NumberOfInstances + 1; ++i)
+	const int32 NumberOfInstances = FMath::FloorToInt32(Length / Spacing) + 1;
+	//const float DistanceToEnd = BoatPathingVisSpline->GetSplineLength();
+	for (int i = 0; i < NumberOfInstances; ++i)
 	{
-		const float Distance = DistanceToEnd - (Spacing * i);
+		const float Distance = Length - (Spacing * i);
 		const FVector Location = BoatPathingVisSpline->GetLocationAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::Local);
 		FRotator Rotation = BoatPathingVisSpline->GetRotationAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::Local);
 		Rotation.Yaw += 90.f;
