@@ -509,28 +509,11 @@ void ACBBoat::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 
 EBoatPathingState ACBBoat::EvaluateStatePostFollowLight()
 {
-	USplineComponent* SplineComponent = ICBPathProvider::Execute_GetClosestPath(GetWorld()->GetAuthGameMode(), this);
-	if (SplineComponent != CurrentPath)
-	{
-		BoatPathingVis->SetVisibility(false);
-		CurrentPath = SplineComponent;
-		ICBPathProvider::Execute_RegisterPathingActorWithPath(GetWorld()->GetAuthGameMode(), this, SplineComponent);
-		UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-		if (NavSys && CurrentQueryIndex != INDEX_NONE)
-		{
-			NavSys->AbortAsyncFindPathRequest(CurrentQueryIndex);
-		}
-	}
 	
-	const FVector ClosestSplinePoint = CurrentPath->FindLocationClosestToWorldLocation(GetActorLocation(), ESplineCoordinateSpace::World);
-	const float DistanceToClosestPathPoint = (ClosestSplinePoint - GetActorLocation()).Length();
-	if (DistanceToClosestPathPoint > MaxDistanceToPathAllowed)
-	{
-		OnPathingActorLeftPath.Broadcast(this);
-		TargetSpline = CurrentPath;
-		GenerateNewPath();
-		GetWorldTimerManager().SetTimer(RedrawInstancedMeshTimerHandle, this, &ACBBoat::RegeneratePath_Elapsed, RedrawInstancedMeshDelay, true);
-	}
+	OnPathingActorLeftPath.Broadcast(this);
+	TargetSpline = CurrentPath;
+	GenerateNewPath();
+	GetWorldTimerManager().SetTimer(RedrawInstancedMeshTimerHandle, this, &ACBBoat::RegeneratePath_Elapsed, RedrawInstancedMeshDelay, true);
 	
 	OnNewPathChosen.Broadcast(CurrentPath);
 	return EBoatPathingState::FollowingPath;
