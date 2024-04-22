@@ -23,11 +23,32 @@ ACBMonsterHazard::ACBMonsterHazard()
 	CapsuleTrigger->SetCollisionResponseToAllChannels(ECR_Overlap);
 }
 
+void ACBMonsterHazard::SubmergeAndDestroy()
+{
+	// Clearing lifespan timer as if this function is called tge object is being destroyed already
+	if (GetWorldTimerManager().IsTimerActive(LifeSpanHandle))
+	{
+		GetWorldTimerManager().ClearTimer(LifeSpanHandle);
+	}
+
+	SetActorEnableCollision(false);
+	FMoveActorToActionData Data;
+	Data.bUseActorLocationAsStart = true;
+	Data.InterpDuration = 2.f;
+	Data.EndLocation = GetActorLocation() - (GetActorUpVector() * 600.f);
+	UCBMoveActorToAction* MoveActorTo = UCBMoveActorToAction::Execute(this, this, Data);
+	if (IsValid(this))
+	{
+		MoveActorTo->OnActorFinishedMoving.AddDynamic(this, &ThisClass::DestroyAfterSubmerge);
+	}
+}
+
 void ACBMonsterHazard::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	SetLifeSpan(LifeSpan);
+	GetWorldTimerManager().SetTimer(LifeSpanHandle,	this, &ThisClass::SubmergeAndDestroy, LifeSpan);
+	
 	CapsuleTrigger->OnComponentBeginOverlap.AddDynamic(this, &ACBMonsterHazard::OnOverlap);
 }
 
@@ -85,7 +106,8 @@ bool ACBMonsterHazard::AttemptRelocation()
 	}
 
 	if (!Path) return false;
-	
+
+	SetActorEnableCollision(true);
 	const FVector BoatDestination = Path->GetWorldLocationAtSplinePoint(Path->GetNumberOfSplinePoints() - 1);
 	const float InputKey = Path->FindInputKeyClosestToWorldLocation(Target->GetActorLocation());
 	const float DistanceAlongSpline = Path->GetDistanceAlongSplineAtSplineInputKey(InputKey);
@@ -114,6 +136,7 @@ void ACBMonsterHazard::OnNewPathChosen(USplineComponent* NewPath)
 
 		if (DiceRoll < Chance)
 		{
+			SetActorEnableCollision(false);
 			FMoveActorToActionData Data;
 			Data.bUseActorLocationAsStart = true;
 			Data.InterpDuration = 2.f;
@@ -131,6 +154,7 @@ void ACBMonsterHazard::OnMonsterFinishedSubmerging(AActor* MovingActor)
 {
 	if (AttemptRelocation())
 	{
+		SetActorEnableCollision(true);
 		FMoveActorToActionData Data;
 		Data.bUseActorLocationAsStart = true;
 		Data.InterpDuration = 2.f;
@@ -152,16 +176,7 @@ void ACBMonsterHazard::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	if(OtherActor && IsValid(OtherActor) && OtherActor->Implements<UCBDestroyableObject>())
 	{
 		ICBDestroyableObject::Execute_TakeDamage(OtherActor, this, EDestroyingObject::Monster, ICBDestroyableObject::Execute_GetMaxHealth(OtherActor));
-		FMoveActorToActionData Data;
-		Data.bUseActorLocationAsStart = true;
-		Data.InterpDuration = 2.f;
-		Data.EndLocation = GetActorLocation() - (GetActorUpVector() * 600.f);
-		UCBMoveActorToAction* MoveActorTo = UCBMoveActorToAction::Execute(this, this, Data);
-		if (IsValid(this))
-		{
-			MoveActorTo->OnActorFinishedMoving.AddDynamic(this, &ThisClass::DestroyAfterSubmerge);
-		}
-		SetActorEnableCollision(false);
+		SubmergeAndDestroy();	
 	}
 }
 

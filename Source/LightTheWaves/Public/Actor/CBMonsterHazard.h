@@ -18,6 +18,7 @@ class LIGHTTHEWAVES_API ACBMonsterHazard : public AActor, public ICBMonsterInter
 public:	
 	// Sets default values for this actor's properties
 	ACBMonsterHazard();
+	void SubmergeAndDestroy();
 
 	virtual void Destroyed() override;
 
@@ -74,4 +75,7 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnMonsterDead OnMonsterDead;
+
+	UPROPERTY()
+	FTimerHandle LifeSpanHandle;
 };
