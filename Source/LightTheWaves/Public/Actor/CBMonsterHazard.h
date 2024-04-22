@@ -49,7 +49,7 @@ protected:
 	void OnNewPathChosen(USplineComponent* NewPath);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
-	TObjectPtr<UStaticMeshComponent> MonsterMesh;
+	TObjectPtr<USkeletalMeshComponent> MonsterMesh;
 
 	/** How long should the monster stay on the field */
 	UPROPERTY(EditDefaultsOnly, Category = "Monster Props")
@@ -75,6 +75,9 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnMonsterDead OnMonsterDead;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayAttackAnimation();
 
 	UPROPERTY()
 	FTimerHandle LifeSpanHandle;

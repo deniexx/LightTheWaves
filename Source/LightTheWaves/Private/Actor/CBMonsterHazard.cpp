@@ -15,7 +15,7 @@ ACBMonsterHazard::ACBMonsterHazard()
 	PrimaryActorTick.bCanEverTick = false;
 
 	CapsuleTrigger = CreateDefaultSubobject<UCapsuleComponent>(FName("CapsuleTrigger"));
-	MonsterMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("MonsterMesh"));
+	MonsterMesh = CreateDefaultSubobject<USkeletalMeshComponent>(FName("MonsterMesh"));
 
 	SetRootComponent(CapsuleTrigger);
 	MonsterMesh->SetupAttachment(GetRootComponent());
@@ -175,6 +175,7 @@ void ACBMonsterHazard::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 {
 	if(OtherActor && IsValid(OtherActor) && OtherActor->Implements<UCBDestroyableObject>())
 	{
+		PlayAttackAnimation();
 		ICBDestroyableObject::Execute_TakeDamage(OtherActor, this, EDestroyingObject::Monster, ICBDestroyableObject::Execute_GetMaxHealth(OtherActor));
 		SubmergeAndDestroy();	
 	}

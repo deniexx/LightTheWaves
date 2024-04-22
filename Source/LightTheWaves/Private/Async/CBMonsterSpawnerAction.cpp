@@ -118,9 +118,8 @@ void UCBMonsterSpawnerAction::SpawnMonster(const FVector& Vector, AActor* Target
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	// Add a random rotation to the monster, might have to remove this?
-	const FRotator SpawnRotation = FRotator(0.f, FMath::FRandRange(0.f, 359.f), 0.f);
-	if (AActor* NewMonster = GetWorld()->SpawnActor<AActor>(SpawnerParams.MonsterClass, Vector, SpawnRotation, SpawnParameters))
+	const FRotator Rotation = (Vector - Target->GetActorLocation()).Rotation() + FRotator(0.f, -90.f, 0.f);
+	if (AActor* NewMonster = GetWorld()->SpawnActor<AActor>(SpawnerParams.MonsterClass, Vector, Rotation, SpawnParameters))
 	{
 		ICBMonsterInterface::Execute_SetTarget(NewMonster, Target);
 		OnMonsterSpawned.Broadcast(NewMonster);
