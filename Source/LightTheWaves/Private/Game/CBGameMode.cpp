@@ -368,7 +368,7 @@ bool ACBGameMode::IsAtMaxBoats()
 		Start = BoatSpawningSettings.MaxBoats[WaveNumber - 1].X;
 		End = BoatSpawningSettings.MaxBoats[WaveNumber - 1].Y;
 	}
-	const float MaxBoatsAllowed = FMath::Lerp(Start, End, GetPercentRoundTimeElapsed());
+	const float MaxBoatsAllowed = FMath::Lerp(Start, End, FMath::Min(GetPercentRoundTimeElapsed() + 0.3f, 1.f));
 	const int32 MaxBoatsAllowedInt = FMath::RoundToInt32(MaxBoatsAllowed * 100.f) * 0.01f;
 	
 	return Boats.Num() >= MaxBoatsAllowedInt;
