@@ -94,7 +94,8 @@ void ACBMonsterHazard::SetTarget_Implementation(AActor* InTarget)
 		return;
 	}
 	
-	SetLifeSpan(5.f);
+	GetWorldTimerManager().ClearTimer(LifeSpanHandle);
+	GetWorldTimerManager().SetTimer(LifeSpanHandle,	this, &ThisClass::SubmergeAndDestroy, 5.f);
 }
 
 bool ACBMonsterHazard::AttemptRelocation()
@@ -162,7 +163,7 @@ void ACBMonsterHazard::OnMonsterFinishedSubmerging(AActor* MovingActor)
 		UCBMoveActorToAction* MoveAction = UCBMoveActorToAction::Execute(this, this, Data);
 	}
 
-	Destroy();
+	SubmergeAndDestroy();
 }
 
 void ACBMonsterHazard::DestroyAfterSubmerge(AActor* MovingActor)
