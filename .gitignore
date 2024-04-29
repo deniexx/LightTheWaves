@@ -88,3 +88,6 @@ Plugins/*/Intermediate/*
 DerivedDataCache/*
 Config/DefaultEngine.ini
 Config/DefaultEngine.ini
+Content/Audio/Sounds/Ambience/SC_Ambience.uasset
+Content/Audio/Sounds/Ambience/SC_Ambience.uasset
+Content/Audio/Sounds/Ambience/WavesAndWind_sourced_.uasset
